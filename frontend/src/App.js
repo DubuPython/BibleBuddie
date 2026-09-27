@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
+import './App.css'; // Restores your custom styling!
 import Home from './Home';
 import BibleReader from './BibleReader';
 import Profile from './Profile';
