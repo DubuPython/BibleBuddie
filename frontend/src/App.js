@@ -11,36 +11,36 @@ function App() {
   const [session, setSession] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
-  
-  // Dark/Light Mode State
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // 60-30-10 Palettes with Gradients
   const theme = isDarkMode ? {
-    bgGradient: 'linear-gradient(135deg, #00121d 0%, #00263d 100%)', // 60% Blue-Black
-    surface: '#005080', // 30% Secondary
-    accent: '#4dbcff',  // 10% Accent
+    bgGradient: 'linear-gradient(135deg, #00121d 0%, #00263d 100%)',
+    surface: '#005080',
+    accent: '#4dbcff', 
     text: '#ffffff',
     inputBg: '#00263d',
     pageText: '#ffffff'
   } : {
-    bgGradient: 'linear-gradient(135deg, #e6f2ff 0%, #ffffff 100%)', // 60% Blue-White
-    surface: '#365263', // 30% Secondary
-    accent: '#0090e6',  // 10% Accent
-    text: '#ffffff',    // White text is needed to read against the dark #365263 surface
+    bgGradient: 'linear-gradient(135deg, #e6f2ff 0%, #ffffff 100%)',
+    surface: '#365263',
+    accent: '#0090e6', 
+    text: '#ffffff',    
     inputBg: '#ffffff',
     pageText: '#365263' 
   };
 
+  // EFFECT 1: Only handles background colors when dark mode is toggled
   useEffect(() => {
-    // Apply gradient to the full page body
     document.body.style.background = theme.bgGradient;
-    document.body.style.backgroundAttachment = 'fixed'; // Keeps gradient static while scrolling
+    document.body.style.backgroundAttachment = 'fixed'; 
     document.body.style.color = theme.pageText;
     document.body.style.minHeight = '100vh';
     document.body.style.margin = '0';
     document.body.style.transition = 'background 0.4s ease, color 0.4s ease';
+  }, [isDarkMode, theme.bgGradient, theme.pageText]);
 
+  // EFFECT 2: Only handles Supabase authentication once on load
+  useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (!session && !isGuest) setIsAuthModalOpen(true);
@@ -52,24 +52,19 @@ function App() {
     });
 
     return () => subscription.unsubscribe();
-  }, [isGuest, theme]);
+  }, [isGuest]);
 
   return (
     <div className="App" style={{ padding: '20px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       
       {isAuthModalOpen && <AuthModal onClose={() => { setIsGuest(true); setIsAuthModalOpen(false); }} theme={theme} isDarkMode={isDarkMode} />}
 
-      {/* Child-Friendly Navigation Bar */}
       <nav style={{ display: 'flex', gap: '20px', padding: '20px 30px', backgroundColor: theme.surface, borderRadius: '25px', marginBottom: '30px', alignItems: 'center', boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: `4px solid ${theme.accent}` }}>
         <Link to="/" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>Home</Link>
         <Link to="/bible" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>Virtual Bible</Link>
-        
-        {/* Profile tab is now identical in color to the others */}
         <Link to="/profile" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>My Profile</Link>
         
-        {/* Right-aligned controls */}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '15px', alignItems: 'center' }}>
-          
           <button onClick={() => setIsDarkMode(!isDarkMode)} style={{ background: theme.accent, border: 'none', borderRadius: '50%', width: '45px', height: '45px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 0 rgba(0,0,0,0.2)' }}>
             {isDarkMode ? (
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00263d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line></svg>

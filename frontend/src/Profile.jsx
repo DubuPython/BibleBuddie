@@ -6,17 +6,21 @@ const Profile = ({ session, openAuthModal, theme, isDarkMode }) => {
   const [readCount, setReadCount] = useState(0);
   const totalChapters = 1189;
 
+  // Extract the ID to prevent infinite re-fetching
+  const userId = session?.user?.id;
+
   useEffect(() => {
-    if (session) fetchData(session.user.id);
-  }, [session]);
-
-  const fetchData = async (userId) => {
-    const { data: bData } = await supabase.from('bookmarks').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-    if (bData) setBookmarks(bData);
-
-    const { count } = await supabase.from('reading_progress').select('*', { count: 'exact', head: true }).eq('user_id', userId);
-    if (count !== null) setReadCount(count);
-  };
+    if (userId) {
+      const fetchData = async () => {
+        const { data: bData } = await supabase.from('bookmarks').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+        if (bData) setBookmarks(bData);
+    
+        const { count } = await supabase.from('reading_progress').select('*', { count: 'exact', head: true }).eq('user_id', userId);
+        if (count !== null) setReadCount(count);
+      };
+      fetchData();
+    }
+  }, [userId]);
 
   const deleteBookmark = async (id) => {
     await supabase.from('bookmarks').delete().eq('id', id);
