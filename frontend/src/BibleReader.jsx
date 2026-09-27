@@ -4,7 +4,7 @@ import { supabase } from './supabaseClient';
 
 // "Ge" is correctly restored for Genesis, and chapter counts are included for continuous reading.
 const bibleBooks = [
-  { name: "Genesis", value: "Ge", chapters: 50 }, { name: "Exodus", value: "Exo", chapters: 40 }, 
+  { name: "Genesis", value: "Genesis", chapters: 50 }, { name: "Exodus", value: "Exo", chapters: 40 }, 
   { name: "Leviticus", value: "Lev", chapters: 27 }, { name: "Numbers", value: "Num", chapters: 36 }, 
   { name: "Deuteronomy", value: "Deu", chapters: 34 }, { name: "Joshua", value: "Jos", chapters: 24 },
   { name: "Judges", value: "Jdg", chapters: 21 }, { name: "Ruth", value: "Rut", chapters: 4 }, 
