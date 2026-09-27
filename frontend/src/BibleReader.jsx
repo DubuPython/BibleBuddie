@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-
+    // gumana ka pls
 const BibleReader = ({ book = 'Genesis', chapter = 1 }) => {
   const [verses, setVerses] = useState([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
