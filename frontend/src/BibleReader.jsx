@@ -5,23 +5,25 @@ const BibleReader = ({ book = 'Genesis', chapter = 1 }) => {
   const [verses, setVerses] = useState([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   
-  const [currentBook, setCurrentBook] = useState(book);
-  const [currentChapter, setCurrentChapter] = useState(chapter);
+  // Removed unused setter functions to prevent Vercel CI build failures
+  const [currentBook] = useState(book);
+  const [currentChapter] = useState(chapter);
   
-  // New state for pages
   const [currentPage, setCurrentPage] = useState(1);
-  const versesPerPage = 4; // Adjust this to show more or fewer verses per page
+  const versesPerPage = 4;
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/bible/${currentBook}/${currentChapter}`)
+    // Falls back to localhost if the environment variable is missing locally
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    
+    axios.get(`${apiUrl}/api/bible/${currentBook}/${currentChapter}`)
       .then(response => {
         setVerses(response.data);
-        setCurrentPage(1); // Reset to page 1 when loading a new chapter
+        setCurrentPage(1); 
       })
       .catch(error => console.error("Error fetching Bible data", error));
   }, [currentBook, currentChapter]);
 
-  // Calculate pages
   const totalPages = Math.ceil(verses.length / versesPerPage);
   const indexOfLastVerse = currentPage * versesPerPage;
   const indexOfFirstVerse = indexOfLastVerse - versesPerPage;
@@ -31,7 +33,6 @@ const BibleReader = ({ book = 'Genesis', chapter = 1 }) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       
-      // Only read the text on the current page
       const pageText = currentVerses.map(v => v.text).join(' ');
       const utterance = new SpeechSynthesisUtterance(pageText);
       
@@ -53,7 +54,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1 }) => {
 
   const nextPage = () => {
     if (currentPage < totalPages) {
-      handleStop(); // Stop reading when flipping the page
+      handleStop(); 
       setCurrentPage(currentPage + 1);
     }
   };
@@ -95,24 +96,16 @@ const BibleReader = ({ book = 'Genesis', chapter = 1 }) => {
         </button>
       </div>
 
-      {/* The "Paper" Page UI */}
       <div className="storybook-text" style={{ 
         backgroundColor: '#fffdf0', 
         border: '2px solid #e0d4b5',
-        borderRadius: '5px 25px 25px 5px', /* Makes it look like the right side of an open book */
+        borderRadius: '5px 25px 25px 5px', 
         boxShadow: 'inset 8px 0 10px rgba(0,0,0,0.03), 2px 2px 5px rgba(0,0,0,0.1)',
         minHeight: '300px'
       }}>
         {verses.length > 0 ? currentVerses.map(verse => (
           <p key={verse.id} style={{ marginBottom: '20px' }}>
-            <strong style={{ 
-              backgroundColor: '#ffc107', 
-              padding: '4px 10px', 
-              borderRadius: '50%', 
-              marginRight: '12px',
-              color: '#fff',
-              display: 'inline-block'
-            }}>
+            <strong className="verse-number">
               {verse.verse}
             </strong> 
             {verse.text}
@@ -120,7 +113,6 @@ const BibleReader = ({ book = 'Genesis', chapter = 1 }) => {
         )) : <p>Loading the story...</p>}
       </div>
 
-      {/* Page Flipping Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
         <button 
           className="bouncy-button" 
