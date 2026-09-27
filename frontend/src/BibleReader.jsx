@@ -1,25 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-    // gumana ka pls
+
+// Full list of KJV Bible Books for the dropdown
+const bibleBooks = [
+  "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", 
+  "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", 
+  "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", 
+  "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", 
+  "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", 
+  "Malachi", "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", 
+  "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", 
+  "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", 
+  "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"
+];
+
 const BibleReader = ({ book = 'Genesis', chapter = 1 }) => {
   const [verses, setVerses] = useState([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   
-  // Removed unused setter functions to prevent Vercel CI build failures
-  const [currentBook] = useState(book);
-  const [currentChapter] = useState(chapter);
+  // Restored setter functions to allow UI updates
+  const [currentBook, setCurrentBook] = useState(book);
+  const [currentChapter, setCurrentChapter] = useState(chapter);
   
   const [currentPage, setCurrentPage] = useState(1);
   const versesPerPage = 4;
 
   useEffect(() => {
-    // Falls back to localhost if the environment variable is missing locally
     const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     
     axios.get(`${apiUrl}/api/bible/${currentBook}/${currentChapter}`)
       .then(response => {
         setVerses(response.data);
-        setCurrentPage(1); 
+        setCurrentPage(1); // Reset to page 1 when changing chapter
       })
       .catch(error => console.error("Error fetching Bible data", error));
   }, [currentBook, currentChapter]);
@@ -68,16 +80,52 @@ const BibleReader = ({ book = 'Genesis', chapter = 1 }) => {
 
   return (
     <div className="card" style={{ backgroundColor: '#fff', border: '4px solid #8c9eff' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 className="card-title" style={{ color: '#3f51b5', margin: 0 }}>
-          📖 {currentBook} (Chapter {currentChapter})
-        </h2>
+      
+      {/* Navigation Controls */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        backgroundColor: '#e8eaf6', 
+        padding: '10px 15px', 
+        borderRadius: '10px',
+        marginBottom: '20px' 
+      }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <label style={{ fontWeight: 'bold', color: '#3f51b5' }}>Book:</label>
+          <select 
+            value={currentBook} 
+            onChange={(e) => setCurrentBook(e.target.value)}
+            style={{ padding: '5px 10px', borderRadius: '5px', border: '2px solid #8c9eff', fontSize: '1rem' }}
+          >
+            {bibleBooks.map(b => (
+              <option key={b} value={b}>{b}</option>
+            ))}
+          </select>
+
+          <label style={{ fontWeight: 'bold', color: '#3f51b5', marginLeft: '10px' }}>Chapter:</label>
+          <input 
+            type="number" 
+            min="1" 
+            max="150" 
+            value={currentChapter} 
+            onChange={(e) => setCurrentChapter(e.target.value)}
+            style={{ padding: '5px 10px', borderRadius: '5px', border: '2px solid #8c9eff', fontSize: '1rem', width: '70px' }}
+          />
+        </div>
+        
         <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#757575' }}>
           Page {currentPage} of {totalPages || 1}
         </span>
       </div>
       
-      <div style={{ marginBottom: '25px', marginTop: '20px', display: 'flex', gap: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+        <h2 className="card-title" style={{ color: '#3f51b5', margin: 0 }}>
+          📖 {currentBook} (Chapter {currentChapter})
+        </h2>
+      </div>
+      
+      <div style={{ marginBottom: '25px', display: 'flex', gap: '10px' }}>
         <button 
           className="bouncy-button" 
           onClick={handleReadAloud} 
@@ -101,16 +149,27 @@ const BibleReader = ({ book = 'Genesis', chapter = 1 }) => {
         border: '2px solid #e0d4b5',
         borderRadius: '5px 25px 25px 5px', 
         boxShadow: 'inset 8px 0 10px rgba(0,0,0,0.03), 2px 2px 5px rgba(0,0,0,0.1)',
-        minHeight: '300px'
+        minHeight: '300px',
+        padding: '20px'
       }}>
         {verses.length > 0 ? currentVerses.map(verse => (
-          <p key={verse.id} style={{ marginBottom: '20px' }}>
-            <strong className="verse-number">
+          <p key={verse.id} style={{ marginBottom: '20px', fontSize: '1.2rem', lineHeight: '1.8' }}>
+            <span style={{ 
+              backgroundColor: '#ffe082', 
+              color: '#d84315', 
+              borderRadius: '50%', 
+              padding: '2px 8px', 
+              fontWeight: 'bold', 
+              marginRight: '10px',
+              fontSize: '0.9rem'
+            }}>
               {verse.verse}
-            </strong> 
+            </span> 
             {verse.text}
           </p>
-        )) : <p>Loading the story...</p>}
+        )) : <p style={{ textAlign: 'center', color: '#9e9e9e', fontStyle: 'italic' }}>
+          Loading the story... (Make sure this chapter exists!)
+          </p>}
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
