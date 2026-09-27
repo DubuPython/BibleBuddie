@@ -7,9 +7,7 @@ const Profile = ({ session, openAuthModal }) => {
   const totalChapters = 1189;
 
   useEffect(() => {
-    if (session) {
-      fetchData(session.user.id);
-    }
+    if (session) fetchData(session.user.id);
   }, [session]);
 
   const fetchData = async (userId) => {
@@ -33,11 +31,7 @@ const Profile = ({ session, openAuthModal }) => {
         <p style={{ fontSize: '1.2rem', color: '#616161', marginBottom: '25px' }}>
           Create an account to track your reading progress and save your favorite verses.
         </p>
-        <button 
-          className="bouncy-button" 
-          onClick={openAuthModal} 
-          style={{ backgroundColor: '#00e676', padding: '15px 30px', fontSize: '1.2rem', boxShadow: '0 5px 0 #00c853', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
+        <button onClick={openAuthModal} style={{ backgroundColor: '#00e676', padding: '15px 30px', fontSize: '1.2rem', boxShadow: '0 5px 0 #00c853', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold' }}>
           ✨ Log In / Sign Up
         </button>
       </div>
@@ -45,17 +39,17 @@ const Profile = ({ session, openAuthModal }) => {
   }
 
   const progressPercentage = Math.min(100, Math.round((readCount / totalChapters) * 100));
+  const displayName = session.user.user_metadata?.username || "Reader";
 
   return (
     <div>
+      <h1 style={{ color: '#3f51b5', textAlign: 'center', marginBottom: '30px' }}>Hello, {displayName}! 👋</h1>
       <div className="card" style={{ backgroundColor: '#fff', border: '5px solid #ffb74d', borderRadius: '25px', padding: '30px', marginBottom: '25px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2 style={{ color: '#ef6c00', margin: 0 }}>🏆 My Reading Journey</h2>
           <button onClick={() => supabase.auth.signOut()} style={{ backgroundColor: '#ff5252', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '15px', cursor: 'pointer', fontWeight: 'bold', boxShadow: '0 4px 0 #d50000' }}>Log Out</button>
         </div>
-        
         <p style={{ fontSize: '1.2rem', color: '#424242', fontWeight: 'bold' }}>Chapters Completed: {readCount} / {totalChapters}</p>
-        
         <div style={{ width: '100%', backgroundColor: '#ffe0b2', borderRadius: '20px', height: '35px', overflow: 'hidden', border: '3px solid #ffb74d' }}>
           <div style={{ width: `${progressPercentage}%`, backgroundColor: '#ff9800', height: '100%', transition: 'width 0.5s ease-in-out', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '900', fontSize: '1.1rem' }}>
             {progressPercentage > 4 ? `${progressPercentage}%` : ''}
