@@ -1,29 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 
-const Profile = () => {
-  const [session, setSession] = useState(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLogin, setIsLogin] = useState(true);
-  
+const Profile = ({ session, openAuthModal }) => {
   const [bookmarks, setBookmarks] = useState([]);
   const [readCount, setReadCount] = useState(0);
   const totalChapters = 1189;
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) fetchData(session.user.id);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) fetchData(session.user.id);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    if (session) {
+      fetchData(session.user.id);
+    }
+  }, [session]);
 
   const fetchData = async (userId) => {
     const { data: bData } = await supabase.from('bookmarks').select('*').eq('user_id', userId).order('created_at', { ascending: false });
@@ -33,18 +20,6 @@ const Profile = () => {
     if (count !== null) setReadCount(count);
   };
 
-  const handleAuth = async (e) => {
-    e.preventDefault();
-    if (isLogin) {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) alert(error.message);
-    } else {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) alert(error.message);
-      else alert("Check your email to confirm your account!");
-    }
-  };
-
   const deleteBookmark = async (id) => {
     await supabase.from('bookmarks').delete().eq('id', id);
     setBookmarks(bookmarks.filter(b => b.id !== id));
@@ -52,16 +27,19 @@ const Profile = () => {
 
   if (!session) {
     return (
-      <div className="card" style={{ maxWidth: '400px', margin: '40px auto', backgroundColor: '#fff', border: '5px solid #8c9eff', borderRadius: '25px', padding: '30px' }}>
-        <h2 style={{ color: '#3f51b5', textAlign: 'center', marginBottom: '20px' }}>{isLogin ? '👋 Welcome Back!' : '✨ Join BibleBuddie'}</h2>
-        <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          <input type="email" placeholder="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} style={{ padding: '12px', borderRadius: '15px', border: '2px solid #b39ddb', fontSize: '1rem', outline: 'none' }} required />
-          <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ padding: '12px', borderRadius: '15px', border: '2px solid #b39ddb', fontSize: '1rem', outline: 'none' }} required />
-          <button type="submit" style={{ backgroundColor: '#00e676', padding: '12px', borderRadius: '15px', border: 'none', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 0 #00c853' }}>{isLogin ? 'Log In' : 'Sign Up'}</button>
-        </form>
-        <p style={{ textAlign: 'center', marginTop: '20px', cursor: 'pointer', color: '#757575', fontWeight: 'bold' }} onClick={() => setIsLogin(!isLogin)}>
-          {isLogin ? "Need an account? Sign Up!" : "Already have an account? Log In!"}
+      <div className="card" style={{ backgroundColor: '#fff', border: '5px solid #8c9eff', borderRadius: '25px', padding: '40px', textAlign: 'center', marginTop: '20px' }}>
+        <span style={{ fontSize: '4rem', display: 'block', marginBottom: '10px' }}>🕵️‍♂️</span>
+        <h2 style={{ color: '#3f51b5', marginBottom: '15px' }}>You are browsing as a Guest!</h2>
+        <p style={{ fontSize: '1.2rem', color: '#616161', marginBottom: '25px' }}>
+          Create an account to track your reading progress and save your favorite verses.
         </p>
+        <button 
+          className="bouncy-button" 
+          onClick={openAuthModal} 
+          style={{ backgroundColor: '#00e676', padding: '15px 30px', fontSize: '1.2rem', boxShadow: '0 5px 0 #00c853', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          ✨ Log In / Sign Up
+        </button>
       </div>
     );
   }

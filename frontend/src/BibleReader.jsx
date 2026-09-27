@@ -27,7 +27,7 @@ const bibleBooks = [
   { name: "3 John", value: "3Jo" }, { name: "Jude", value: "Jud" }, { name: "Revelation", value: "Rev" }
 ];
 
-const BibleReader = ({ book = 'Ge', chapter = 1 }) => {
+const BibleReader = ({ book = 'Ge', chapter = 1, session, openAuthModal }) => {
   const [verses, setVerses] = useState([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   
@@ -75,8 +75,7 @@ const BibleReader = ({ book = 'Ge', chapter = 1 }) => {
   };
 
   const handleBookmark = async (verse) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return alert("Please create an account to save bookmarks! 👤");
+    if (!session) return openAuthModal();
 
     const { error } = await supabase.from('bookmarks').insert([{
       user_id: session.user.id,
@@ -91,8 +90,7 @@ const BibleReader = ({ book = 'Ge', chapter = 1 }) => {
   };
 
   const markChapterComplete = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return alert("Please log in to track your reading progress! 👤");
+    if (!session) return openAuthModal();
 
     const { error } = await supabase.from('reading_progress').insert([{
       user_id: session.user.id,
