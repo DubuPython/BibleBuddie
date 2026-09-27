@@ -1,18 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 
-const Profile = ({ session, openAuthModal, isDarkMode }) => {
+const Profile = ({ session, openAuthModal, theme }) => {
   const [bookmarks, setBookmarks] = useState([]);
   const [readCount, setReadCount] = useState(0);
   const totalChapters = 1189;
-
-  const theme = {
-    surface: isDarkMode ? '#1E1E1E' : '#FFFFFF',
-    text: isDarkMode ? '#E0E0E0' : '#333333',
-    border: isDarkMode ? '#333333' : '#C5CAE9',
-    accent: isDarkMode ? '#FFB74D' : '#FF9800',
-    cardBg: isDarkMode ? '#2C2C2C' : '#F0F4FF'
-  };
 
   useEffect(() => {
     if (session) fetchData(session.user.id);
@@ -33,11 +25,12 @@ const Profile = ({ session, openAuthModal, isDarkMode }) => {
 
   if (!session) {
     return (
-      <div className="card" style={{ backgroundColor: theme.surface, border: `3px solid ${theme.border}`, borderRadius: '25px', padding: '40px', textAlign: 'center', marginTop: '20px' }}>
-        <span style={{ fontSize: '4rem', display: 'block', marginBottom: '10px' }}>🕵️‍♂️</span>
-        <h2 style={{ color: theme.text, marginBottom: '15px' }}>You are browsing as a Guest!</h2>
-        <p style={{ fontSize: '1.2rem', color: theme.text, marginBottom: '25px' }}>Create an account to track your reading progress and save your favorite verses.</p>
-        <button onClick={openAuthModal} style={{ backgroundColor: theme.accent, padding: '15px 30px', fontSize: '1.2rem', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold', color: isDarkMode ? '#121212' : '#fff' }}>✨ Log In / Sign Up</button>
+      <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.secondary}`, borderRadius: '12px', padding: '40px', textAlign: 'center' }}>
+        <h2 style={{ color: theme.text, marginBottom: '15px' }}>Guest Mode</h2>
+        <p style={{ fontSize: '1.1rem', color: theme.text, marginBottom: '25px' }}>Create an account to track your reading progress and save your favorite verses.</p>
+        <button onClick={openAuthModal} style={{ backgroundColor: theme.accent, padding: '12px 25px', fontSize: '1.1rem', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', color: theme.buttonText }}>
+          Log In / Sign Up
+        </button>
       </div>
     );
   }
@@ -47,34 +40,39 @@ const Profile = ({ session, openAuthModal, isDarkMode }) => {
 
   return (
     <div>
-      <h1 style={{ color: theme.text, textAlign: 'center', marginBottom: '30px' }}>Hello, {displayName}! 👋</h1>
-      <div className="card" style={{ backgroundColor: theme.surface, border: `3px solid ${theme.border}`, borderRadius: '25px', padding: '30px', marginBottom: '25px' }}>
+      <h1 style={{ color: theme.text, marginBottom: '30px' }}>Hello, {displayName}!</h1>
+      
+      <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.secondary}`, borderRadius: '12px', padding: '30px', marginBottom: '30px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ color: theme.accent, margin: 0 }}>🏆 My Reading Journey</h2>
-          <button onClick={() => supabase.auth.signOut()} style={{ backgroundColor: isDarkMode ? '#E57373' : '#FF5252', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '15px', cursor: 'pointer', fontWeight: 'bold' }}>Log Out</button>
+          <h2 style={{ color: theme.text, margin: 0 }}>Reading Journey</h2>
+          <button onClick={() => supabase.auth.signOut()} style={{ backgroundColor: theme.secondary, color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Log Out</button>
         </div>
-        <p style={{ fontSize: '1.2rem', color: theme.text, fontWeight: 'bold' }}>Chapters Completed: {readCount} / {totalChapters}</p>
-        <div style={{ width: '100%', backgroundColor: theme.cardBg, borderRadius: '20px', height: '35px', overflow: 'hidden', border: `2px solid ${theme.border}` }}>
-          <div style={{ width: `${progressPercentage}%`, backgroundColor: theme.accent, height: '100%', transition: 'width 0.5s', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isDarkMode ? '#121212' : '#fff', fontWeight: '900', fontSize: '1.1rem' }}>
+        
+        <p style={{ fontSize: '1.1rem', color: theme.text, marginBottom: '15px' }}>Chapters Completed: {readCount} / {totalChapters}</p>
+        
+        <div style={{ width: '100%', backgroundColor: theme.dominant, borderRadius: '8px', height: '30px', overflow: 'hidden', border: `1px solid ${theme.secondary}` }}>
+          <div style={{ width: `${progressPercentage}%`, backgroundColor: theme.accent, height: '100%', transition: 'width 0.5s', display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.buttonText, fontWeight: 'bold', fontSize: '0.9rem' }}>
             {progressPercentage > 4 ? `${progressPercentage}%` : ''}
           </div>
         </div>
       </div>
 
-      <div className="card" style={{ backgroundColor: theme.surface, border: `3px solid ${theme.border}`, borderRadius: '25px', padding: '30px' }}>
-        <h2 style={{ color: theme.text, margin: '0 0 20px 0' }}>⭐ My Bookmark Collection</h2>
+      <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.secondary}`, borderRadius: '12px', padding: '30px' }}>
+        <h2 style={{ color: theme.text, margin: '0 0 20px 0' }}>Bookmark Collection</h2>
         {bookmarks.length > 0 ? (
           <div style={{ display: 'grid', gap: '15px' }}>
             {bookmarks.map(b => (
-              <div key={b.id} style={{ backgroundColor: theme.cardBg, padding: '20px', borderRadius: '15px', border: `2px dashed ${theme.border}`, position: 'relative' }}>
-                <button onClick={() => deleteBookmark(b.id)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: isDarkMode ? '#E57373' : '#FF5252', fontSize: '1.5rem', cursor: 'pointer' }}>✖</button>
-                <h4 style={{ margin: '0 0 10px 0', color: theme.accent, fontSize: '1.2rem' }}>{b.book_name} {b.chapter}:{b.verse}</h4>
-                <p style={{ margin: 0, fontStyle: 'italic', color: theme.text, fontSize: '1.1rem', lineHeight: '1.5' }}>"{b.verse_text}"</p>
+              <div key={b.id} style={{ backgroundColor: theme.dominant, padding: '20px', borderRadius: '8px', border: `1px solid ${theme.secondary}`, position: 'relative' }}>
+                <button onClick={() => deleteBookmark(b.id)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: theme.secondary, cursor: 'pointer' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+                <h4 style={{ margin: '0 0 10px 0', color: theme.accent, fontSize: '1.1rem' }}>{b.book_name} {b.chapter}:{b.verse}</h4>
+                <p style={{ margin: 0, color: theme.text, fontSize: '1rem', lineHeight: '1.5' }}>"{b.verse_text}"</p>
               </div>
             ))}
           </div>
         ) : (
-          <p style={{ textAlign: 'center', color: theme.text, fontSize: '1.2rem' }}>You haven't bookmarked any verses yet!</p>
+          <p style={{ color: theme.text, fontSize: '1rem' }}>No verses bookmarked yet.</p>
         )}
       </div>
     </div>

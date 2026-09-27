@@ -11,22 +11,27 @@ function App() {
   const [session, setSession] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
-  
-  // Theme State
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
-  // 60-30-10 Theme Palette for App Level
-  const theme = {
-    bg: isDarkMode ? '#121212' : '#F0F4FF',      // 60% Dominant Background
-    surface: isDarkMode ? '#1E1E1E' : '#FFFFFF', // 30% Secondary Surface
-    accent: isDarkMode ? '#FFB74D' : '#FF9800',  // 10% Accent
-    text: isDarkMode ? '#E0E0E0' : '#333333',
-    border: isDarkMode ? '#333333' : '#C5CAE9'
+  // Exact 60-30-10 Palettes from your references
+  const theme = isDarkMode ? {
+    dominant: '#00263d',
+    secondary: '#005080',
+    accent: '#4dbcff',
+    text: '#ffffff',
+    buttonText: '#00263d',
+    cardBg: '#005080'
+  } : {
+    dominant: '#ffffff',
+    secondary: '#365263',
+    accent: '#0090e6',
+    text: '#365263',
+    buttonText: '#ffffff',
+    cardBg: '#ffffff'
   };
 
   useEffect(() => {
-    // Apply the 60% dominant color to the entire HTML body
-    document.body.style.backgroundColor = theme.bg;
+    document.body.style.backgroundColor = theme.dominant;
     document.body.style.color = theme.text;
     document.body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
 
@@ -41,47 +46,40 @@ function App() {
     });
 
     return () => subscription.unsubscribe();
-  }, [isGuest, theme.bg, theme.text]);
-
-  const handleGuestClose = () => {
-    setIsGuest(true);
-    setIsAuthModalOpen(false);
-  };
+  }, [isGuest, theme]);
 
   return (
-    <div className="App" style={{ padding: '20px', maxWidth: '1000px', margin: '0 auto', position: 'relative' }}>
+    <div className="App" style={{ padding: '20px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'sans-serif' }}>
       
-      {isAuthModalOpen && <AuthModal onClose={handleGuestClose} isDarkMode={isDarkMode} />}
+      {isAuthModalOpen && <AuthModal onClose={() => { setIsGuest(true); setIsAuthModalOpen(false); }} theme={theme} />}
 
-      <nav style={{ display: 'flex', gap: '15px', padding: '20px', backgroundColor: theme.surface, justifyContent: 'center', borderRadius: '15px', marginBottom: '30px', border: `3px solid ${theme.border}`, position: 'relative', alignItems: 'center', transition: 'all 0.3s' }}>
-        <Link to="/" style={{ textDecoration: 'none', fontWeight: '900', color: theme.text, fontSize: '1.2rem' }}>🏠 Home</Link>
-        <Link to="/bible" style={{ textDecoration: 'none', fontWeight: '900', color: theme.text, fontSize: '1.2rem' }}>📖 Virtual Bible</Link>
-        <Link to="/profile" style={{ textDecoration: 'none', fontWeight: '900', color: theme.accent, fontSize: '1.2rem' }}>👤 My Profile</Link>
+      <nav style={{ display: 'flex', gap: '20px', padding: '20px 30px', backgroundColor: theme.secondary, borderRadius: '12px', marginBottom: '30px', alignItems: 'center', transition: 'all 0.3s', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+        <Link to="/" style={{ textDecoration: 'none', fontWeight: 'bold', color: '#ffffff', fontSize: '1.1rem' }}>Home</Link>
+        <Link to="/bible" style={{ textDecoration: 'none', fontWeight: 'bold', color: '#ffffff', fontSize: '1.1rem' }}>Virtual Bible</Link>
+        <Link to="/profile" style={{ textDecoration: 'none', fontWeight: 'bold', color: theme.accent, fontSize: '1.1rem' }}>My Profile</Link>
         
-        {/* Dark Mode Toggle */}
-        <button 
-          onClick={() => setIsDarkMode(!isDarkMode)} 
-          style={{ position: 'absolute', right: (!session && isGuest) ? '120px' : '20px', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}
-        >
-          {isDarkMode ? '☀️' : '🌙'}
-        </button>
-
-        {!session && isGuest && (
-          <button 
-            onClick={() => setIsAuthModalOpen(true)} 
-            style={{ position: 'absolute', right: '20px', backgroundColor: theme.accent, color: isDarkMode ? '#121212' : '#fff', border: 'none', padding: '8px 15px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
-          >
-            Log In
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '15px', alignItems: 'center' }}>
+          <button onClick={() => setIsDarkMode(!isDarkMode)} style={{ background: 'none', border: 'none', color: theme.accent, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+            {isDarkMode ? (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            ) : (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            )}
           </button>
-        )}
+
+          {!session && isGuest && (
+            <button onClick={() => setIsAuthModalOpen(true)} style={{ backgroundColor: theme.accent, color: theme.buttonText, border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+              Log In
+            </button>
+          )}
+        </div>
       </nav>
 
       <Routes>
-        <Route path="/" element={<Home isDarkMode={isDarkMode} />} />
-        <Route path="/bible" element={<BibleReader session={session} openAuthModal={() => setIsAuthModalOpen(true)} isDarkMode={isDarkMode} />} />
-        <Route path="/profile" element={<Profile session={session} openAuthModal={() => setIsAuthModalOpen(true)} isDarkMode={isDarkMode} />} />
+        <Route path="/" element={<Home theme={theme} />} />
+        <Route path="/bible" element={<BibleReader session={session} openAuthModal={() => setIsAuthModalOpen(true)} theme={theme} />} />
+        <Route path="/profile" element={<Profile session={session} openAuthModal={() => setIsAuthModalOpen(true)} theme={theme} />} />
       </Routes>
-      
     </div>
   );
 }
