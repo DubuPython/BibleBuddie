@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Full list of KJV Bible Books for the dropdown
 const bibleBooks = [
   "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", 
   "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", 
@@ -18,7 +17,6 @@ const BibleReader = ({ book = 'Genesis', chapter = 1 }) => {
   const [verses, setVerses] = useState([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   
-  // Restored setter functions to allow UI updates
   const [currentBook, setCurrentBook] = useState(book);
   const [currentChapter, setCurrentChapter] = useState(chapter);
   
@@ -31,7 +29,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1 }) => {
     axios.get(`${apiUrl}/api/bible/${currentBook}/${currentChapter}`)
       .then(response => {
         setVerses(response.data);
-        setCurrentPage(1); // Reset to page 1 when changing chapter
+        setCurrentPage(1); 
       })
       .catch(error => console.error("Error fetching Bible data", error));
   }, [currentBook, currentChapter]);
@@ -44,14 +42,11 @@ const BibleReader = ({ book = 'Genesis', chapter = 1 }) => {
   const handleReadAloud = () => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      
       const pageText = currentVerses.map(v => v.text).join(' ');
       const utterance = new SpeechSynthesisUtterance(pageText);
-      
       utterance.rate = 0.85; 
       utterance.pitch = 1.1; 
       utterance.onend = () => setIsSpeaking(false);
-      
       window.speechSynthesis.speak(utterance);
       setIsSpeaking(true);
     } else {
@@ -79,66 +74,100 @@ const BibleReader = ({ book = 'Genesis', chapter = 1 }) => {
   };
 
   return (
-    <div className="card" style={{ backgroundColor: '#fff', border: '4px solid #8c9eff' }}>
+    <div className="card" style={{ backgroundColor: '#fff', border: '5px solid #8c9eff', borderRadius: '25px', padding: '20px' }}>
       
-      {/* Navigation Controls */}
+      {/* Child-Friendly Navigation Controls */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
-        backgroundColor: '#e8eaf6', 
-        padding: '10px 15px', 
-        borderRadius: '10px',
-        marginBottom: '20px' 
+        backgroundColor: '#f0f4ff', 
+        padding: '15px 25px', 
+        borderRadius: '20px',
+        marginBottom: '25px',
+        border: '3px dashed #b39ddb'
       }}>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <label style={{ fontWeight: 'bold', color: '#3f51b5' }}>Book:</label>
-          <select 
-            value={currentBook} 
-            onChange={(e) => setCurrentBook(e.target.value)}
-            style={{ padding: '5px 10px', borderRadius: '5px', border: '2px solid #8c9eff', fontSize: '1rem' }}
-          >
-            {bibleBooks.map(b => (
-              <option key={b} value={b}>{b}</option>
-            ))}
-          </select>
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.5rem' }}>📚</span>
+            <select 
+              value={currentBook} 
+              onChange={(e) => setCurrentBook(e.target.value)}
+              style={{ 
+                padding: '10px 20px', 
+                borderRadius: '25px', 
+                border: '3px solid #ff4081', 
+                backgroundColor: '#fce4ec',
+                color: '#c2185b',
+                fontWeight: '900', 
+                fontSize: '1.1rem',
+                cursor: 'pointer',
+                outline: 'none',
+                boxShadow: '0 4px 0 #ff4081'
+              }}
+            >
+              {bibleBooks.map(b => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
+          </div>
 
-          <label style={{ fontWeight: 'bold', color: '#3f51b5', marginLeft: '10px' }}>Chapter:</label>
-          <input 
-            type="number" 
-            min="1" 
-            max="150" 
-            value={currentChapter} 
-            onChange={(e) => setCurrentChapter(e.target.value)}
-            style={{ padding: '5px 10px', borderRadius: '5px', border: '2px solid #8c9eff', fontSize: '1rem', width: '70px' }}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.5rem' }}>🔢</span>
+            <input 
+              type="number" 
+              min="1" 
+              max="150" 
+              value={currentChapter} 
+              // Enforce integer parsing to prevent backend crashes
+              onChange={(e) => setCurrentChapter(parseInt(e.target.value) || 1)}
+              style={{ 
+                padding: '10px 15px', 
+                borderRadius: '25px', 
+                border: '3px solid #ff9800', 
+                backgroundColor: '#fff3e0',
+                color: '#e65100',
+                fontWeight: '900', 
+                fontSize: '1.1rem', 
+                width: '80px',
+                outline: 'none',
+                textAlign: 'center',
+                boxShadow: '0 4px 0 #ff9800'
+              }}
+            />
+          </div>
         </div>
         
-        <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#757575' }}>
+        <div style={{ 
+          backgroundColor: '#bbdefb', 
+          color: '#1565c0', 
+          padding: '8px 15px', 
+          borderRadius: '20px', 
+          fontWeight: '900',
+          border: '2px solid #64b5f6'
+        }}>
           Page {currentPage} of {totalPages || 1}
-        </span>
+        </div>
       </div>
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-        <h2 className="card-title" style={{ color: '#3f51b5', margin: 0 }}>
-          📖 {currentBook} (Chapter {currentChapter})
-        </h2>
-      </div>
+      <h2 className="card-title" style={{ color: '#3f51b5', margin: '0 0 20px 0', fontSize: '2rem', textAlign: 'center' }}>
+        {currentBook} (Chapter {currentChapter})
+      </h2>
       
-      <div style={{ marginBottom: '25px', display: 'flex', gap: '10px' }}>
+      <div style={{ marginBottom: '25px', display: 'flex', gap: '15px' }}>
         <button 
           className="bouncy-button" 
           onClick={handleReadAloud} 
           disabled={isSpeaking || verses.length === 0}
-          style={{ backgroundColor: '#00e676', boxShadow: '0 5px 0 #00c853', flex: 1 }}
+          style={{ backgroundColor: '#00e676', boxShadow: '0 6px 0 #00c853', flex: 1, borderRadius: '20px', fontSize: '1.2rem', padding: '15px' }}
         >
-          🔊 Read Page Aloud
+          🔊 Read Aloud
         </button>
         <button 
           className="bouncy-button" 
           onClick={handleStop} 
           disabled={!isSpeaking}
-          style={{ flex: 1 }}
+          style={{ backgroundColor: '#ff5252', boxShadow: '0 6px 0 #d50000', flex: 1, borderRadius: '20px', fontSize: '1.2rem', padding: '15px', color: 'white' }}
         >
           ⏹️ Stop
         </button>
@@ -146,48 +175,57 @@ const BibleReader = ({ book = 'Genesis', chapter = 1 }) => {
 
       <div className="storybook-text" style={{ 
         backgroundColor: '#fffdf0', 
-        border: '2px solid #e0d4b5',
-        borderRadius: '5px 25px 25px 5px', 
-        boxShadow: 'inset 8px 0 10px rgba(0,0,0,0.03), 2px 2px 5px rgba(0,0,0,0.1)',
+        border: '3px solid #ffe082',
+        borderRadius: '20px', 
+        boxShadow: 'inset 0 0 15px rgba(0,0,0,0.05)',
         minHeight: '300px',
-        padding: '20px'
+        padding: '30px'
       }}>
         {verses.length > 0 ? currentVerses.map(verse => (
-          <p key={verse.id} style={{ marginBottom: '20px', fontSize: '1.2rem', lineHeight: '1.8' }}>
+          <p key={verse.id} style={{ marginBottom: '25px', fontSize: '1.3rem', lineHeight: '1.8', color: '#424242' }}>
             <span style={{ 
-              backgroundColor: '#ffe082', 
-              color: '#d84315', 
+              backgroundColor: '#ffb74d', 
+              color: '#fff', 
               borderRadius: '50%', 
-              padding: '2px 8px', 
-              fontWeight: 'bold', 
-              marginRight: '10px',
-              fontSize: '0.9rem'
+              width: '35px',
+              height: '35px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: '900', 
+              marginRight: '12px',
+              fontSize: '1rem',
+              boxShadow: '0 3px 0 #f57c00'
             }}>
               {verse.verse}
             </span> 
             {verse.text}
           </p>
-        )) : <p style={{ textAlign: 'center', color: '#9e9e9e', fontStyle: 'italic' }}>
-          Loading the story... (Make sure this chapter exists!)
-          </p>}
+        )) : (
+          <div style={{ textAlign: 'center', color: '#9e9e9e', paddingTop: '50px' }}>
+            <span style={{ fontSize: '3rem', display: 'block', marginBottom: '15px' }}>🤔</span>
+            <h3>Loading the story...</h3>
+            <p>If it doesn't load, make sure the chapter exists!</p>
+          </div>
+        )}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '25px' }}>
         <button 
           className="bouncy-button" 
           onClick={prevPage} 
           disabled={currentPage === 1}
-          style={{ backgroundColor: '#29b6f6', boxShadow: '0 5px 0 #0288d1' }}
+          style={{ backgroundColor: '#29b6f6', boxShadow: '0 6px 0 #0288d1', borderRadius: '20px', padding: '12px 25px' }}
         >
-          ⬅️ Previous Page
+          ⬅️ Previous
         </button>
         <button 
           className="bouncy-button" 
           onClick={nextPage} 
           disabled={currentPage === totalPages}
-          style={{ backgroundColor: '#29b6f6', boxShadow: '0 5px 0 #0288d1', marginRight: 0 }}
+          style={{ backgroundColor: '#29b6f6', boxShadow: '0 6px 0 #0288d1', marginRight: 0, borderRadius: '20px', padding: '12px 25px' }}
         >
-          Next Page ➡️
+          Next ➡️
         </button>
       </div>
     </div>
