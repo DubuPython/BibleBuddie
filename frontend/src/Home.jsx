@@ -6,20 +6,19 @@ const Home = () => {
   const [todayEvents, setTodayEvents] = useState([]);
 
   useEffect(() => {
-    // In a real app, you would create a specific endpoint for the daily verse.
-    // Here we are fetching John 3:16 as an example daily verse.
-    // To this:
-    axios.get(`${process.env.REACT_APP_API_URL}/api/bible/John/3`)
+    // Safely grab the live URL or fallback to localhost for local development
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+    axios.get(`${apiUrl}/api/bible/John/3`)
       .then(response => {
         const targetVerse = response.data.find(v => v.verse === 16);
         setVerseOfTheDay(targetVerse);
       })
-      .catch(error => console.error(error));
+      .catch(error => console.error("Error fetching verse:", error));
 
-    // Fetch Today's Historical Events
-    axios.get(`http://localhost:5000/api/events/today`)
+    axios.get(`${apiUrl}/api/events/today`)
       .then(response => setTodayEvents(response.data))
-      .catch(error => console.error(error));
+      .catch(error => console.error("Error fetching events:", error));
   }, []);
 
   return (
@@ -43,7 +42,7 @@ const Home = () => {
         {todayEvents.length > 0 ? (
           <ul style={{ fontSize: '1.2rem', lineHeight: '1.6' }}>
             {todayEvents.map(event => (
-              <li key={event.id}><strong>{event.year}:</strong> {event.description}</li>
+              <li key={event.id}><strong>{event.event_date}:</strong> {event.description}</li>
             ))}
           </ul>
         ) : (
