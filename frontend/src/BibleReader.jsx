@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { supabase } from './supabaseClient';
 
@@ -40,60 +40,76 @@ const bibleBooks = [
 
 const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, theme, isDarkMode }) => {
   const [verses, setVerses] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
+  
   const [currentBook, setCurrentBook] = useState(book);
   const [currentChapter, setCurrentChapter] = useState(chapter);
-  const [currentPage, setCurrentPage] = useState(1);
-  const versesPerPage = 4;
+  
+  const [bookmarkedVerses, setBookmarkedVerses] = useState([]);
+  const [hasCompletedChapter, setHasCompletedChapter] = useState(false);
+  const [customModal, setCustomModal] = useState({ show: false, title: '', message: '' });
 
-  useEffect(() => {
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    axios.get(`${apiUrl}/api/bible/${currentBook}/${currentChapter}`)
-      .then(response => {
-        setVerses(response.data);
-        setCurrentPage(1); 
-      })
-      .catch(error => console.error("Error fetching Bible data", error));
-  }, [currentBook, currentChapter]);
-
-  const totalPages = Math.ceil(verses.length / versesPerPage) || 1;
-  const indexOfLastVerse = currentPage * versesPerPage;
-  const indexOfFirstVerse = indexOfLastVerse - versesPerPage;
-  const currentVerses = verses.slice(indexOfFirstVerse, indexOfLastVerse);
+  const scrollRef = useRef(null);
   const currentBookObj = bibleBooks.find(b => b.value === currentBook);
   const displayBookName = currentBookObj?.name || currentBook;
 
-  const handleReadAloud = () => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const pageText = currentVerses.map(v => v.text).join(' ');
-      const utterance = new SpeechSynthesisUtterance(pageText);
-      utterance.rate = 0.85; 
-      utterance.onend = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utterance);
-      setIsSpeaking(true);
-    }
-  };
+  useEffect(() => {
+    const fetchChapterData = async () => {
+      // 1. Fetch Verses
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      try {
+        const response = await axios.get(`${apiUrl}/api/bible/${currentBook}/${currentChapter}`);
+        setVerses(response.data);
+      } catch (err) { console.error(err); }
 
-  const handleStop = () => {
-    window.speechSynthesis.cancel();
-    setIsSpeaking(false);
+      // 2. Fetch User's Bookmarks for this specific chapter to color the icons
+      if (session) {
+        const { data } = await supabase.from('bookmarks').select('verse').eq('user_id', session.user.id).eq('book_name', displayBookName).eq('chapter', currentChapter);
+        if (data) setBookmarkedVerses(data.map(b => b.verse));
+      }
+      
+      setHasCompletedChapter(false);
+      setSearchQuery('');
+      if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    };
+    
+    fetchChapterData();
+  }, [currentBook, currentChapter, session, displayBookName]);
+
+  const displayedVerses = verses.filter(v => v.text.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  // Scroll Event: Automatically mark complete when reaching the bottom
+  const handleScroll = async (e) => {
+    const bottom = e.target.scrollHeight - e.target.scrollTop <= e.target.clientHeight + 50;
+    if (bottom && !hasCompletedChapter && session) {
+      setHasCompletedChapter(true);
+      await supabase.from('reading_progress').insert([{ user_id: session.user.id, book_name: displayBookName, chapter: parseInt(currentChapter) }]);
+      setCustomModal({ show: true, title: '🎉 Congratulations!', message: `You have successfully finished ${displayBookName} Chapter ${currentChapter}!` });
+    }
   };
 
   const handleBookmark = async (verse) => {
     if (!session) return openAuthModal();
+    
+    if (bookmarkedVerses.includes(verse.verse)) {
+      setCustomModal({ show: true, title: 'Already Saved!', message: 'This verse is already in your bookmark collection.' });
+      return;
+    }
+
     const { error } = await supabase.from('bookmarks').insert([{
       user_id: session.user.id, book_name: displayBookName, chapter: parseInt(currentChapter),
       verse: parseInt(verse.verse), verse_text: verse.text
     }]);
-    if (!error) alert("Saved to your collection!");
+
+    if (!error) {
+      setBookmarkedVerses([...bookmarkedVerses, verse.verse]);
+      setCustomModal({ show: true, title: '⭐ Saved!', message: 'Verse successfully added to your collection.' });
+    }
   };
 
-  const handleContinuousReading = async () => {
+  const nextChapter = () => {
     handleStop();
-    if (session) {
-      await supabase.from('reading_progress').insert([{ user_id: session.user.id, book_name: displayBookName, chapter: parseInt(currentChapter) }]);
-    }
     const currentBookIndex = bibleBooks.findIndex(b => b.value === currentBook);
     if (parseInt(currentChapter) < currentBookObj.chapters) {
       setCurrentChapter(parseInt(currentChapter) + 1);
@@ -103,74 +119,98 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
     }
   };
 
-  const nextPage = () => {
-    if (currentPage < totalPages) {
-      handleStop();
-      setCurrentPage(currentPage + 1);
-    } else {
-      handleContinuousReading();
+  const handleReadAloud = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const pageText = displayedVerses.map(v => v.text).join(' ');
+      const utterance = new SpeechSynthesisUtterance(pageText);
+      utterance.rate = 0.95; 
+      utterance.pitch = 1.6; 
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
     }
   };
 
-  // Reusable bubbly input styling
+  const handleStop = () => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
+
   const inputStyle = {
-    padding: '12px 20px', borderRadius: '20px', border: `3px solid ${theme.accent}`,
+    padding: '12px', borderRadius: '15px', border: `3px solid ${theme.accent}`,
     backgroundColor: theme.inputBg, color: isDarkMode ? '#ffffff' : '#365263', 
-    fontSize: '1.2rem', fontWeight: '900', outline: 'none', boxShadow: '0 4px 0 rgba(0,0,0,0.1)'
+    fontSize: '1rem', fontWeight: 'bold', outline: 'none'
   };
 
   return (
-    <div style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '35px', padding: '30px', boxShadow: '0 10px 20px rgba(0,0,0,0.2)' }}>
+    <div className="reader-wrapper" style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '20px' }}>
       
-      {/* Navigation Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: theme.inputBg, padding: '20px', borderRadius: '25px', marginBottom: '30px', border: `3px dashed ${theme.accent}` }}>
-        <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <select value={currentBook} onChange={(e) => { setCurrentBook(e.target.value); setCurrentChapter(1); }} style={inputStyle}>
-            {bibleBooks.map(b => ( <option key={b.value} value={b.value}>{b.name}</option> ))}
-          </select>
-          <input type="number" min="1" max={currentBookObj?.chapters || 150} value={currentChapter} onChange={(e) => { let ch = parseInt(e.target.value) || 1; setCurrentChapter(ch > currentBookObj.chapters ? currentBookObj.chapters : ch); }} style={{ ...inputStyle, width: '90px', textAlign: 'center' }} />
-        </div>
-        <div style={{ backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', padding: '10px 20px', borderRadius: '20px', fontWeight: '900', fontSize: '1.2rem' }}>
-          Page {currentPage} of {totalPages}
-        </div>
-      </div>
-      
-      <h2 style={{ color: theme.text, margin: '0 0 25px 0', fontSize: '2.5rem', textAlign: 'center', fontWeight: '900' }}>{displayBookName} {currentChapter}</h2>
-      
-      <div style={{ marginBottom: '30px', display: 'flex', gap: '15px' }}>
-        <button onClick={handleReadAloud} disabled={isSpeaking || verses.length === 0} style={{ flex: 1, backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', borderRadius: '25px', fontSize: '1.3rem', padding: '15px', fontWeight: '900', border: 'none', cursor: 'pointer', boxShadow: '0 6px 0 rgba(0,0,0,0.15)' }}>
-          <svg style={{ verticalAlign: 'middle', marginRight: '8px' }} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> Read Aloud
-        </button>
-        <button onClick={handleStop} disabled={!isSpeaking} style={{ flex: 1, backgroundColor: theme.inputBg, color: isDarkMode ? '#ffffff' : '#365263', borderRadius: '25px', border: `4px solid ${theme.accent}`, fontSize: '1.3rem', padding: '15px', fontWeight: '900', cursor: 'pointer', boxShadow: '0 6px 0 rgba(0,0,0,0.1)' }}>
-          <svg style={{ verticalAlign: 'middle', marginRight: '8px' }} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg> Stop
-        </button>
-      </div>
-
-      <div style={{ backgroundColor: theme.inputBg, border: `4px solid ${theme.accent}`, borderRadius: '25px', minHeight: '300px', padding: '35px', marginBottom: '30px' }}>
-        {verses.length > 0 ? currentVerses.map(verse => (
-          <div key={verse.id} style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '30px' }}>
-            <button onClick={() => handleBookmark(verse)} style={{ background: 'none', border: 'none', color: theme.accent, cursor: 'pointer', marginRight: '15px', marginTop: '2px', padding: 0 }} title="Bookmark this verse">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
-            </button>
-            <p style={{ margin: 0, fontSize: '1.3rem', lineHeight: '1.8', color: isDarkMode ? '#ffffff' : '#365263', fontWeight: '600' }}>
-              <span style={{ backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', borderRadius: '50%', width: '38px', height: '38px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', marginRight: '15px', fontSize: '1.1rem' }}>
-                {verse.verse}
-              </span> 
-              {verse.text}
-            </p>
+      {/* Custom Alert Popup overlay */}
+      {customModal.show && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
+          <div style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '30px', textAlign: 'center', maxWidth: '350px' }}>
+            <h2 style={{ color: theme.text, marginTop: 0 }}>{customModal.title}</h2>
+            <p style={{ color: theme.text, fontSize: '1.2rem', marginBottom: '25px' }}>{customModal.message}</p>
+            <button onClick={() => setCustomModal({ show: false, title: '', message: '' })} style={{ backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', border: 'none', padding: '12px 25px', borderRadius: '15px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', width: '100%' }}>Awesome!</button>
           </div>
-        )) : (
-          <p style={{ textAlign: 'center', color: isDarkMode ? '#ffffff' : '#365263', paddingTop: '50px', fontSize: '1.5rem', fontWeight: 'bold' }}>Loading text...</p>
-        )}
+        </div>
+      )}
+
+      {/* Reader Controls */}
+      <div className="reader-controls" style={{ display: 'flex', gap: '15px', backgroundColor: theme.inputBg, padding: '15px', borderRadius: '20px', marginBottom: '15px', border: `3px dashed ${theme.accent}` }}>
+        <select value={currentBook} onChange={(e) => { setCurrentBook(e.target.value); setCurrentChapter(1); }} style={inputStyle}>
+          {bibleBooks.map(b => ( <option key={b.value} value={b.value}>{b.name}</option> ))}
+        </select>
+        <input type="number" min="1" max={currentBookObj?.chapters || 150} value={currentChapter} onChange={(e) => { let ch = parseInt(e.target.value) || 1; setCurrentChapter(ch > currentBookObj.chapters ? currentBookObj.chapters : ch); }} style={{ ...inputStyle, width: '70px', textAlign: 'center' }} />
+        <input type="text" placeholder="🔍 Search this chapter..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-        <button onClick={() => { handleStop(); setCurrentPage(currentPage - 1); }} disabled={currentPage === 1} style={{ backgroundColor: theme.inputBg, color: isDarkMode ? '#ffffff' : '#365263', border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '15px 30px', fontWeight: '900', fontSize: '1.2rem', cursor: 'pointer', boxShadow: '0 6px 0 rgba(0,0,0,0.1)' }}>
-          ⬅️ Previous Page
-        </button>
-        <button onClick={nextPage} style={{ flex: 1, backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', border: 'none', borderRadius: '25px', padding: '15px 30px', fontWeight: '900', fontSize: '1.2rem', cursor: 'pointer', boxShadow: '0 6px 0 rgba(0,0,0,0.15)' }}>
-          {currentPage === totalPages ? (parseInt(currentChapter) < currentBookObj?.chapters ? "Next Chapter ➡️" : "Next Book ➡️") : "Next Page ➡️"}
-        </button>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+        <button onClick={handleReadAloud} disabled={isSpeaking || verses.length === 0} style={{ flex: 1, backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', borderRadius: '15px', padding: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>🔊 Read Aloud</button>
+        <button onClick={handleStop} disabled={!isSpeaking} style={{ flex: 1, backgroundColor: theme.inputBg, color: isDarkMode ? '#ffffff' : '#365263', borderRadius: '15px', border: `3px solid ${theme.accent}`, padding: '12px', fontWeight: 'bold', cursor: 'pointer' }}>⏹️ Stop</button>
+      </div>
+
+      {/* Scrollable Verses Container */}
+      <div ref={scrollRef} onScroll={handleScroll} className="verses-scroll-area" style={{ backgroundColor: theme.inputBg, border: `4px solid ${theme.accent}`, borderRadius: '20px', padding: '25px' }}>
+        
+        {/* Animated Avatar */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '25px' }}>
+          <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: `4px solid ${theme.accent}`, backgroundColor: theme.surface, overflow: 'hidden' }}>
+            <img src={isSpeaking ? "/talking-face.gif" : "/idle-face.png"} alt="Narrator" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span style="font-size: 2.5rem;">👦</span>'; }}/>
+          </div>
+        </div>
+
+        <h2 style={{ color: theme.text, margin: '0 0 25px 0', fontSize: '2rem', textAlign: 'center' }}>{displayBookName} {currentChapter}</h2>
+
+        {displayedVerses.length > 0 ? displayedVerses.map(verse => {
+          const isBookmarked = bookmarkedVerses.includes(verse.verse);
+          return (
+            <div key={verse.id} style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '25px' }}>
+              <button onClick={() => handleBookmark(verse)} style={{ background: 'none', border: 'none', color: theme.accent, cursor: 'pointer', marginRight: '15px', padding: 0 }} title="Bookmark this verse">
+                {/* Dynamically fill the SVG color if bookmarked */}
+                <svg width="28" height="28" viewBox="0 0 24 24" fill={isBookmarked ? theme.accent : "none"} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+              </button>
+              <p style={{ margin: 0, fontSize: '1.2rem', lineHeight: '1.8', color: isDarkMode ? '#ffffff' : '#365263' }}>
+                <span style={{ backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', borderRadius: '50%', width: '35px', height: '35px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', marginRight: '12px' }}>
+                  {verse.verse}
+                </span> 
+                {verse.text}
+              </p>
+            </div>
+          );
+        }) : (
+          <p style={{ textAlign: 'center', color: theme.text, fontSize: '1.2rem' }}>No verses found.</p>
+        )}
+        
+        {/* Continuous Reading Trigger Button at the very bottom */}
+        {verses.length > 0 && (
+          <div style={{ textAlign: 'center', marginTop: '40px', paddingBottom: '20px' }}>
+            <button onClick={nextChapter} style={{ backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', border: 'none', borderRadius: '25px', padding: '15px 30px', fontWeight: '900', fontSize: '1.2rem', cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,0.2)' }}>
+              Continue to Next Chapter ➡️️
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
