@@ -17,29 +17,26 @@ function App() {
     bgGradient: 'linear-gradient(135deg, #00121d 0%, #00263d 100%)',
     surface: '#005080',
     accent: '#4dbcff', 
-    text: '#ffffff',
+    text: '#ffffff',     // Text on dark surface
     inputBg: '#00263d',
-    pageText: '#ffffff'
+    pageText: '#ffffff'  // Text on input background
   } : {
     bgGradient: 'linear-gradient(135deg, #e6f2ff 0%, #ffffff 100%)',
     surface: '#365263',
     accent: '#0090e6', 
-    text: '#ffffff',    
+    text: '#ffffff',     // Text on dark surface
     inputBg: '#ffffff',
-    pageText: '#365263' 
+    pageText: '#365263'  // Text on white background
   };
 
-  // EFFECT 1: Only handles background colors when dark mode is toggled
   useEffect(() => {
     document.body.style.background = theme.bgGradient;
     document.body.style.backgroundAttachment = 'fixed'; 
-    document.body.style.color = theme.pageText;
-    document.body.style.minHeight = '100vh';
     document.body.style.margin = '0';
-    document.body.style.transition = 'background 0.4s ease, color 0.4s ease';
-  }, [isDarkMode, theme.bgGradient, theme.pageText]);
+    document.body.style.overflow = 'hidden'; // Locks body scrolling
+    document.body.style.transition = 'background 0.4s ease';
+  }, [theme.bgGradient]);
 
-  // EFFECT 2: Only handles Supabase authentication once on load
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -55,11 +52,11 @@ function App() {
   }, [isGuest]);
 
   return (
-    <div className="App" style={{ padding: '20px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div className="App" style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '20px', boxSizing: 'border-box', maxWidth: '1000px', margin: '0 auto', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       
       {isAuthModalOpen && <AuthModal onClose={() => { setIsGuest(true); setIsAuthModalOpen(false); }} theme={theme} isDarkMode={isDarkMode} />}
 
-      <nav style={{ display: 'flex', gap: '20px', padding: '20px 30px', backgroundColor: theme.surface, borderRadius: '25px', marginBottom: '30px', alignItems: 'center', boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: `4px solid ${theme.accent}` }}>
+      <nav style={{ display: 'flex', gap: '20px', padding: '20px 30px', backgroundColor: theme.surface, borderRadius: '25px', marginBottom: '20px', alignItems: 'center', boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: `4px solid ${theme.accent}`, flexShrink: 0 }}>
         <Link to="/" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>Home</Link>
         <Link to="/bible" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>Virtual Bible</Link>
         <Link to="/profile" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>My Profile</Link>
@@ -82,7 +79,7 @@ function App() {
       </nav>
 
       <Routes>
-        <Route path="/" element={<Home theme={theme} isDarkMode={isDarkMode} />} />
+        <Route path="/" element={<Home theme={theme} />} />
         <Route path="/bible" element={<BibleReader session={session} openAuthModal={() => setIsAuthModalOpen(true)} theme={theme} isDarkMode={isDarkMode} />} />
         <Route path="/profile" element={<Profile session={session} openAuthModal={() => setIsAuthModalOpen(true)} theme={theme} isDarkMode={isDarkMode} />} />
       </Routes>

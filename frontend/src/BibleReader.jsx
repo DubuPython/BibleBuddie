@@ -43,8 +43,9 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
   const [searchQuery, setSearchQuery] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
   
-  const [currentBook, setCurrentBook] = useState(book);
-  const [currentChapter, setCurrentChapter] = useState(chapter);
+  // Load initial state from LocalStorage to prevent refresh resets
+  const [currentBook, setCurrentBook] = useState(() => localStorage.getItem('last_book') || book);
+  const [currentChapter, setCurrentChapter] = useState(() => parseInt(localStorage.getItem('last_chapter')) || chapter);
   
   const [bookmarkedVerses, setBookmarkedVerses] = useState([]);
   const [hasCompletedChapter, setHasCompletedChapter] = useState(false);
@@ -55,15 +56,17 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
   const displayBookName = currentBookObj?.name || currentBook;
 
   useEffect(() => {
+    // Save to LocalStorage whenever the book or chapter changes
+    localStorage.setItem('last_book', currentBook);
+    localStorage.setItem('last_chapter', currentChapter.toString());
+
     const fetchChapterData = async () => {
-      // 1. Fetch Verses
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
       try {
         const response = await axios.get(`${apiUrl}/api/bible/${currentBook}/${currentChapter}`);
         setVerses(response.data);
       } catch (err) { console.error(err); }
 
-      // 2. Fetch User's Bookmarks for this specific chapter to color the icons
       if (session) {
         const { data } = await supabase.from('bookmarks').select('verse').eq('user_id', session.user.id).eq('book_name', displayBookName).eq('chapter', currentChapter);
         if (data) setBookmarkedVerses(data.map(b => b.verse));
@@ -79,7 +82,6 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
 
   const displayedVerses = verses.filter(v => v.text.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  // Scroll Event: Automatically mark complete when reaching the bottom
   const handleScroll = async (e) => {
     const bottom = e.target.scrollHeight - e.target.scrollTop <= e.target.clientHeight + 50;
     if (bottom && !hasCompletedChapter && session) {
@@ -139,14 +141,13 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
 
   const inputStyle = {
     padding: '12px', borderRadius: '15px', border: `3px solid ${theme.accent}`,
-    backgroundColor: theme.inputBg, color: isDarkMode ? '#ffffff' : '#365263', 
+    backgroundColor: theme.inputBg, color: theme.pageText, 
     fontSize: '1rem', fontWeight: 'bold', outline: 'none'
   };
 
   return (
-    <div className="reader-wrapper" style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '20px' }}>
+    <div className="reader-wrapper" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '20px' }}>
       
-      {/* Custom Alert Popup overlay */}
       {customModal.show && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
           <div style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '30px', textAlign: 'center', maxWidth: '350px' }}>
@@ -157,8 +158,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
         </div>
       )}
 
-      {/* Reader Controls */}
-      <div className="reader-controls" style={{ display: 'flex', gap: '15px', backgroundColor: theme.inputBg, padding: '15px', borderRadius: '20px', marginBottom: '15px', border: `3px dashed ${theme.accent}` }}>
+      <div className="reader-controls" style={{ display: 'flex', gap: '15px', backgroundColor: theme.inputBg, padding: '15px', borderRadius: '20px', marginBottom: '15px', border: `3px dashed ${theme.accent}`, flexShrink: 0 }}>
         <select value={currentBook} onChange={(e) => { setCurrentBook(e.target.value); setCurrentChapter(1); }} style={inputStyle}>
           {bibleBooks.map(b => ( <option key={b.value} value={b.value}>{b.name}</option> ))}
         </select>
@@ -166,32 +166,29 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
         <input type="text" placeholder="🔍 Search this chapter..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
       </div>
 
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', flexShrink: 0 }}>
         <button onClick={handleReadAloud} disabled={isSpeaking || verses.length === 0} style={{ flex: 1, backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', borderRadius: '15px', padding: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>🔊 Read Aloud</button>
-        <button onClick={handleStop} disabled={!isSpeaking} style={{ flex: 1, backgroundColor: theme.inputBg, color: isDarkMode ? '#ffffff' : '#365263', borderRadius: '15px', border: `3px solid ${theme.accent}`, padding: '12px', fontWeight: 'bold', cursor: 'pointer' }}>⏹️ Stop</button>
+        <button onClick={handleStop} disabled={!isSpeaking} style={{ flex: 1, backgroundColor: theme.inputBg, color: theme.pageText, borderRadius: '15px', border: `3px solid ${theme.accent}`, padding: '12px', fontWeight: 'bold', cursor: 'pointer' }}>⏹️ Stop</button>
       </div>
 
-      {/* Scrollable Verses Container */}
-      <div ref={scrollRef} onScroll={handleScroll} className="verses-scroll-area" style={{ backgroundColor: theme.inputBg, border: `4px solid ${theme.accent}`, borderRadius: '20px', padding: '25px' }}>
+      <div ref={scrollRef} onScroll={handleScroll} className="verses-scroll-area" style={{ flex: 1, overflowY: 'auto', backgroundColor: theme.inputBg, border: `4px solid ${theme.accent}`, borderRadius: '20px', padding: '25px', minHeight: 0 }}>
         
-        {/* Animated Avatar */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '25px' }}>
           <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: `4px solid ${theme.accent}`, backgroundColor: theme.surface, overflow: 'hidden' }}>
             <img src={isSpeaking ? "/talking-face.gif" : "/idle-face.png"} alt="Narrator" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span style="font-size: 2.5rem;">👦</span>'; }}/>
           </div>
         </div>
 
-        <h2 style={{ color: theme.text, margin: '0 0 25px 0', fontSize: '2rem', textAlign: 'center' }}>{displayBookName} {currentChapter}</h2>
+        <h2 style={{ color: theme.pageText, margin: '0 0 25px 0', fontSize: '2rem', textAlign: 'center' }}>{displayBookName} {currentChapter}</h2>
 
         {displayedVerses.length > 0 ? displayedVerses.map(verse => {
           const isBookmarked = bookmarkedVerses.includes(verse.verse);
           return (
             <div key={verse.id} style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '25px' }}>
               <button onClick={() => handleBookmark(verse)} style={{ background: 'none', border: 'none', color: theme.accent, cursor: 'pointer', marginRight: '15px', padding: 0 }} title="Bookmark this verse">
-                {/* Dynamically fill the SVG color if bookmarked */}
                 <svg width="28" height="28" viewBox="0 0 24 24" fill={isBookmarked ? theme.accent : "none"} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
               </button>
-              <p style={{ margin: 0, fontSize: '1.2rem', lineHeight: '1.8', color: isDarkMode ? '#ffffff' : '#365263' }}>
+              <p style={{ margin: 0, fontSize: '1.2rem', lineHeight: '1.8', color: theme.pageText }}>
                 <span style={{ backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', borderRadius: '50%', width: '35px', height: '35px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', marginRight: '12px' }}>
                   {verse.verse}
                 </span> 
@@ -200,14 +197,13 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
             </div>
           );
         }) : (
-          <p style={{ textAlign: 'center', color: theme.text, fontSize: '1.2rem' }}>No verses found.</p>
+          <p style={{ textAlign: 'center', color: theme.pageText, fontSize: '1.2rem' }}>No verses found.</p>
         )}
         
-        {/* Continuous Reading Trigger Button at the very bottom */}
         {verses.length > 0 && (
           <div style={{ textAlign: 'center', marginTop: '40px', paddingBottom: '20px' }}>
             <button onClick={nextChapter} style={{ backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', border: 'none', borderRadius: '25px', padding: '15px 30px', fontWeight: '900', fontSize: '1.2rem', cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,0.2)' }}>
-              Continue to Next Chapter ➡️️
+              Continue to Next Chapter ➡
             </button>
           </div>
         )}

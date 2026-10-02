@@ -16,11 +16,9 @@ const Home = ({ theme }) => {
   const [votd, setVotd] = useState(kidFriendlyVerses[0]);
 
   useEffect(() => {
-    // 1. Set Verse of the Day based on the day of the year
     const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
     setVotd(kidFriendlyVerses[dayOfYear % kidFriendlyVerses.length]);
 
-    // 2. Fetch "What Happened Today" API
     const today = new Date();
     const month = today.getMonth() + 1;
     const day = today.getDate();
@@ -28,7 +26,6 @@ const Home = ({ theme }) => {
     axios.get(`https://byabbe.se/on-this-day/${month}/${day}/events.json`)
       .then(res => {
         if (res.data && res.data.events && res.data.events.length > 0) {
-          // Pick a random historical event from today's date
           const event = res.data.events[Math.floor(Math.random() * Math.min(10, res.data.events.length))];
           setHistoryEvent(`In ${event.year}: ${event.description}`);
         }
@@ -37,16 +34,16 @@ const Home = ({ theme }) => {
   }, []);
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '20px' }}>
-      <div style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '30px', marginBottom: '25px', boxShadow: '0 8px 16px rgba(0,0,0,0.15)' }}>
+    <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '20px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '30px', marginBottom: '25px', boxShadow: '0 8px 16px rgba(0,0,0,0.15)', flexShrink: 0 }}>
         <h2 style={{ color: theme.accent, fontSize: '2rem', marginTop: 0 }}>⭐ Verse of the Day</h2>
         <p style={{ color: theme.text, fontSize: '1.2rem', fontStyle: 'italic', lineHeight: '1.6' }}>"{votd.text}"</p>
         <p style={{ color: theme.accent, textAlign: 'right', fontWeight: 'bold', fontSize: '1.1rem' }}>- {votd.ref}</p>
       </div>
 
-      <div style={{ backgroundColor: theme.inputBg, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '30px', boxShadow: '0 8px 16px rgba(0,0,0,0.15)' }}>
+      <div style={{ backgroundColor: theme.inputBg, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '30px', boxShadow: '0 8px 16px rgba(0,0,0,0.15)', flexShrink: 0 }}>
         <h2 style={{ color: theme.accent, fontSize: '2rem', marginTop: 0 }}>📅 What Happened Today?</h2>
-        <p style={{ color: theme.text, fontSize: '1.2rem', lineHeight: '1.6' }}>{historyEvent}</p>
+        <p style={{ color: theme.pageText, fontSize: '1.2rem', lineHeight: '1.6' }}>{historyEvent}</p>
       </div>
     </div>
   );
