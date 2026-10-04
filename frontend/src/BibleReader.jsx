@@ -83,12 +83,8 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
       setSearchQuery('');
       setMediaError(false);
       
-      // Auto-trigger completion for extremely short chapters that don't need a scrollbar
       if (scrollRef.current) {
         scrollRef.current.scrollTop = 0;
-        if (scrollRef.current.scrollHeight <= scrollRef.current.clientHeight) {
-          triggerCompletion();
-        }
       }
     };
     
@@ -97,7 +93,6 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
 
   const displayedVerses = verses.filter(v => v.text.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  // Abstracted completion logic to be reused reliably
   const triggerCompletion = async () => {
     if (hasCompletedChapter) return;
     setHasCompletedChapter(true);
@@ -121,13 +116,11 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
 
       setCustomModal({ show: true, title: '🎉 Chapter Finished!', message: `Great job! You are on a ${currentStreak} day reading streak! 🔥` });
     } else {
-      // Show Guest Completion Popup
       setCustomModal({ show: true, title: '🎉 Chapter Finished!', message: `Great job! Log in to save your progress and build a daily reading streak! 🔥` });
     }
   };
 
   const handleScroll = (e) => {
-    // Increased tolerance to 300px so it guarantees firing before the user hits the very bottom
     const bottom = e.target.scrollHeight - e.target.scrollTop <= e.target.clientHeight + 300;
     if (bottom) {
       triggerCompletion();
@@ -147,8 +140,26 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
     }
   };
 
-  const nextChapter = () => {
+  const nextChapter = async () => {
     handleStop();
+    
+    // Silently log completion if they click next before hitting the bottom
+    if (!hasCompletedChapter) {
+        setHasCompletedChapter(true);
+        if (session) {
+            await supabase.from('reading_progress').insert([{ user_id: session.user.id, book_name: displayBookName, chapter: parseInt(currentChapter) }]);
+            const today = new Date().toLocaleDateString('en-CA');
+            const { data: stats } = await supabase.from('user_stats').select('*').eq('user_id', session.user.id).single();
+            if (!stats) {
+                await supabase.from('user_stats').insert([{ user_id: session.user.id, streak_count: 1, last_read: today }]);
+            } else if (stats.last_read !== today) {
+                const diffDays = Math.ceil(Math.abs(new Date(today) - new Date(stats.last_read)) / (1000 * 60 * 60 * 24));
+                const currentStreak = (diffDays === 1) ? stats.streak_count + 1 : 1;
+                await supabase.from('user_stats').update({ streak_count: currentStreak, last_read: today }).eq('user_id', session.user.id);
+            }
+        }
+    }
+
     const currentBookIndex = bibleBooks.findIndex(b => b.value === currentBook);
     if (parseInt(currentChapter) < currentBookObj.chapters) {
       setCurrentChapter(parseInt(currentChapter) + 1);
@@ -329,4 +340,4 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
   );
 };
 
-export default BibleReader; 
+export default BibleReader;
