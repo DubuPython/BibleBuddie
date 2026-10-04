@@ -2,6 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { supabase } from './supabaseClient';
 
+// 1. Import your media files directly at the top!
+import idleFace from './idle-face.png';
+import talkingFace from './talking-face.mp4';
+
 const bibleBooks = [
   { name: "Genesis", value: "Genesis", chapters: 50 }, { name: "Exodus", value: "Exo", chapters: 40 }, 
   { name: "Leviticus", value: "Lev", chapters: 27 }, { name: "Numbers", value: "Num", chapters: 36 }, 
@@ -42,7 +46,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
   const [verses, setVerses] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [mediaError, setMediaError] = useState(false); // New state to safely handle missing files
+  const [mediaError, setMediaError] = useState(false);
   
   const [currentBook, setCurrentBook] = useState(() => localStorage.getItem('last_book') || book);
   const [currentChapter, setCurrentChapter] = useState(() => parseInt(localStorage.getItem('last_chapter')) || chapter);
@@ -79,6 +83,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
       setHasCompletedChapter(false);
       setShowCanvas(false);
       setSearchQuery('');
+      setMediaError(false); // Reset error state on chapter change
       if (scrollRef.current) scrollRef.current.scrollTop = 0;
     };
     
@@ -214,11 +219,13 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
         
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '25px' }}>
           <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: `4px solid ${theme.accent}`, backgroundColor: theme.surface, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            
+            {/* 2. Use the imported variables here for the src tags */}
             {mediaError ? (
               <span style={{ fontSize: '3rem' }}>👦</span>
             ) : isSpeaking ? (
               <video 
-                src="/talking-face.mp4" 
+                src={talkingFace}
                 autoPlay 
                 loop 
                 muted 
@@ -228,12 +235,13 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
               />
             ) : (
               <img 
-                src="/idle-face.png" 
+                src={idleFace}
                 alt="Narrator" 
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 onError={() => setMediaError(true)}
               />
             )}
+
           </div>
         </div>
 
