@@ -329,4 +329,4 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
   );
 };
 
-export default BibleReader;
+export default BibleReader; 
