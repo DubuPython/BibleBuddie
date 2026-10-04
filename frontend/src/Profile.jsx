@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 
-const Profile = ({ session, openAuthModal, theme, isDarkMode }) => {
+const Profile = ({ session, openAuthModal, theme }) => {
   const [bookmarks, setBookmarks] = useState([]);
   const [readCount, setReadCount] = useState(0);
   const [streak, setStreak] = useState(0);
-  
   const [prayers, setPrayers] = useState(() => {
     const saved = localStorage.getItem('prayer_board');
     return saved ? JSON.parse(saved) : [{ id: 1, text: "In loving memory of Sarino 🐾", date: new Date().toLocaleDateString() }];
@@ -20,10 +19,8 @@ const Profile = ({ session, openAuthModal, theme, isDarkMode }) => {
       const fetchData = async () => {
         const { data: bData } = await supabase.from('bookmarks').select('*').eq('user_id', userId).order('created_at', { ascending: false });
         if (bData) setBookmarks(bData);
-    
         const { count } = await supabase.from('reading_progress').select('*', { count: 'exact', head: true }).eq('user_id', userId);
         if (count !== null) setReadCount(count);
-
         const { data: sData } = await supabase.from('user_stats').select('streak_count').eq('user_id', userId).single();
         if (sData) setStreak(sData.streak_count);
       };
@@ -32,108 +29,89 @@ const Profile = ({ session, openAuthModal, theme, isDarkMode }) => {
   }, [userId]);
 
   const deleteBookmark = async (id) => {
-    await supabase.from('bookmarks').delete().eq('id', id);
-    setBookmarks(bookmarks.filter(b => b.id !== id));
+    await supabase.from('bookmarks').delete().eq('id', id); setBookmarks(bookmarks.filter(b => b.id !== id));
   };
 
   const addPrayer = () => {
     if (!newPrayer.trim()) return;
-    const updatedPrayers = [{ id: Date.now(), text: newPrayer, date: new Date().toLocaleDateString() }, ...prayers];
-    setPrayers(updatedPrayers);
-    localStorage.setItem('prayer_board', JSON.stringify(updatedPrayers));
-    setNewPrayer("");
+    const updated = [{ id: Date.now(), text: newPrayer, date: new Date().toLocaleDateString() }, ...prayers];
+    setPrayers(updated); localStorage.setItem('prayer_board', JSON.stringify(updated)); setNewPrayer("");
   };
 
   const deletePrayer = (id) => {
     const updated = prayers.filter(p => p.id !== id);
-    setPrayers(updated);
-    localStorage.setItem('prayer_board', JSON.stringify(updated));
+    setPrayers(updated); localStorage.setItem('prayer_board', JSON.stringify(updated));
   };
 
   if (!session) {
     return (
       <div className="verses-scroll-area">
-        <div className="card" style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '35px', padding: '50px', textAlign: 'center' }}>
-          <h2 style={{ color: theme.text, marginBottom: '20px' }}>Guest Mode</h2>
-          <p style={{ fontSize: '1.3rem', color: theme.text, marginBottom: '30px', fontWeight: '600' }}>Create an account to track your reading progress and save your favorite verses.</p>
-          <button onClick={openAuthModal} style={{ backgroundColor: theme.accent, padding: '15px 35px', fontSize: '1.3rem', border: 'none', borderRadius: '25px', cursor: 'pointer', fontWeight: '900', color: isDarkMode ? '#00263d' : '#ffffff', boxShadow: '0 6px 0 rgba(0,0,0,0.15)' }}>
-            Log In / Sign Up
-          </button>
+        <div className="glass-card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <h2 style={{ color: theme.text, fontSize: '2rem', fontWeight: '800' }}>Guest Mode</h2>
+          <p style={{ fontSize: '1.2rem', color: theme.text, margin: '20px 0 40px 0', opacity: 0.9, lineHeight: '1.6' }}>Create an account to track your progress and save your favorite verses.</p>
+          <button onClick={openAuthModal} className="btn btn-primary" style={{ width: '100%', maxWidth: '300px', margin: '0 auto' }}>Log In / Sign Up</button>
         </div>
       </div>
     );
   }
 
   const progressPercentage = Math.min(100, Math.round((readCount / totalChapters) * 100));
-  const displayName = session.user.user_metadata?.username || "Reader";
 
   return (
-    <div className="verses-scroll-area">
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <h1 style={{ color: theme.pageText, margin: 0 }}>Hello, {displayName}!</h1>
-        <div style={{ backgroundColor: theme.surface, border: `3px solid ${theme.accent}`, padding: '10px 20px', borderRadius: '20px', color: theme.text, fontWeight: '900', fontSize: '1.3rem', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>
+    <div className="verses-scroll-area" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+        <h1 style={{ color: theme.text, margin: 0, fontSize: '1.8rem' }}>Hello, {session.user.user_metadata?.username || "Reader"}!</h1>
+        <div style={{ background: 'var(--inputBg)', color: theme.text, padding: '10px 20px', borderRadius: '20px', fontWeight: '800', fontSize: '1.1rem' }}>
           🔥 {streak} Day Streak
         </div>
       </div>
       
-      <div className="card" style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '35px', padding: '35px', marginBottom: '25px' }}>
-        <h2 style={{ color: theme.text, margin: '0 0 25px 0' }}>🕯️ Virtual Prayer Board</h2>
-        
+      <div className="glass-card">
+        <h2 style={{ color: theme.text, margin: '0 0 20px 0', fontSize: '1.5rem' }}>🕯️ Prayer Board</h2>
         <div className="prayer-input-group" style={{ display: 'flex', gap: '15px', marginBottom: '25px' }}>
-          <input 
-            type="text" 
-            placeholder="Write a prayer intention..." 
-            value={newPrayer} 
-            onChange={(e) => setNewPrayer(e.target.value)} 
-            style={{ flex: 1, padding: '15px', borderRadius: '20px', border: `3px solid ${theme.accent}`, backgroundColor: theme.inputBg, color: theme.pageText, fontSize: '1.1rem', fontWeight: 'bold', outline: 'none', boxSizing: 'border-box' }}
-          />
-          <button onClick={addPrayer} style={{ backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', border: 'none', padding: '0 25px', borderRadius: '20px', fontWeight: '900', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,0.15)' }}>
-            Light Candle
-          </button>
+          <input type="text" placeholder="Write a prayer intention..." value={newPrayer} onChange={(e) => setNewPrayer(e.target.value)} className="modern-input" />
+          <button onClick={addPrayer} className="btn btn-primary" style={{ flexShrink: 0 }}>Light Candle</button>
         </div>
-
         <div style={{ display: 'grid', gap: '15px' }}>
           {prayers.map(prayer => (
-            <div key={prayer.id} style={{ backgroundColor: theme.inputBg, padding: '20px', borderRadius: '20px', border: `2px dashed ${theme.accent}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <div key={prayer.id} style={{ backgroundColor: 'var(--inputBg)', padding: '20px', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <p style={{ margin: '0 0 5px 0', color: theme.pageText, fontSize: '1.1rem', fontWeight: 'bold' }}>🕯️ {prayer.text}</p>
-                <small style={{ color: theme.accent, fontWeight: 'bold' }}>{prayer.date}</small>
+                <p style={{ margin: '0 0 8px 0', color: theme.text, fontSize: '1.1rem', fontWeight: '600' }}>🕯️ {prayer.text}</p>
+                <small style={{ color: theme.text, opacity: 0.6, fontWeight: 'bold' }}>{prayer.date}</small>
               </div>
-              <button onClick={() => deletePrayer(prayer.id)} style={{ background: 'none', border: 'none', color: isDarkMode ? '#ffffff' : '#365263', cursor: 'pointer', fontSize: '1.5rem' }}>✖</button>
+              <button onClick={() => deletePrayer(prayer.id)} style={{ background: 'none', border: 'none', color: theme.text, opacity: 0.5, cursor: 'pointer', fontSize: '1.5rem' }}>✖</button>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="card" style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '35px', padding: '35px', marginBottom: '25px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
-          <h2 style={{ color: theme.text, margin: 0 }}>Reading Journey</h2>
-          <button onClick={() => supabase.auth.signOut()} style={{ backgroundColor: theme.inputBg, color: theme.pageText, border: `3px solid ${theme.accent}`, padding: '10px 20px', borderRadius: '20px', cursor: 'pointer', fontWeight: '900', fontSize: '1.1rem' }}>Log Out</button>
+      <div className="glass-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+          <h2 style={{ color: theme.text, margin: 0, fontSize: '1.5rem' }}>Reading Journey</h2>
+          <button onClick={() => supabase.auth.signOut()} className="btn btn-secondary" style={{ padding: '8px 16px', fontSize: '1rem' }}>Log Out</button>
         </div>
-        <p style={{ fontSize: '1.2rem', color: theme.text, marginBottom: '20px', fontWeight: 'bold' }}>Chapters Completed: {readCount} / {totalChapters}</p>
-        <div style={{ width: '100%', backgroundColor: theme.inputBg, borderRadius: '20px', height: '35px', overflow: 'hidden', border: `3px solid ${theme.accent}` }}>
-          <div style={{ width: `${progressPercentage}%`, backgroundColor: theme.accent, height: '100%', transition: 'width 0.5s', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isDarkMode ? '#00263d' : '#ffffff', fontWeight: '900', fontSize: '1.1rem' }}>
+        <p style={{ color: theme.text, marginBottom: '15px', fontWeight: '600', opacity: 0.8 }}>Chapters Completed: {readCount} / {totalChapters}</p>
+        <div style={{ width: '100%', backgroundColor: 'var(--inputBg)', borderRadius: '20px', height: '25px', overflow: 'hidden', boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.05)' }}>
+          <div style={{ width: `${progressPercentage}%`, backgroundColor: theme.accent, height: '100%', transition: 'width 1s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '800', fontSize: '0.9rem' }}>
             {progressPercentage > 4 ? `${progressPercentage}%` : ''}
           </div>
         </div>
       </div>
 
-      <div className="card" style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '35px', padding: '35px', marginBottom: '25px' }}>
-        <h2 style={{ color: theme.text, margin: '0 0 25px 0' }}>Bookmark Collection</h2>
+      <div className="glass-card">
+        <h2 style={{ color: theme.text, margin: '0 0 20px 0', fontSize: '1.5rem' }}>Bookmarks</h2>
         {bookmarks.length > 0 ? (
-          <div style={{ display: 'grid', gap: '20px' }}>
+          <div style={{ display: 'grid', gap: '15px' }}>
             {bookmarks.map(b => (
-              <div key={b.id} style={{ backgroundColor: theme.inputBg, padding: '25px', borderRadius: '25px', border: `3px solid ${theme.accent}`, position: 'relative' }}>
-                <button onClick={() => deleteBookmark(b.id)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: theme.pageText, cursor: 'pointer' }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
-                <h4 style={{ margin: '0 0 10px 0', color: theme.accent, fontSize: '1.2rem', fontWeight: '900', paddingRight: '30px' }}>{b.book_name} {b.chapter}:{b.verse}</h4>
-                <p style={{ margin: 0, color: theme.pageText, fontSize: '1.1rem', lineHeight: '1.6', fontWeight: '600' }}>"{b.verse_text}"</p>
+              <div key={b.id} style={{ backgroundColor: 'var(--inputBg)', padding: '20px', borderRadius: '16px', position: 'relative' }}>
+                <button onClick={() => deleteBookmark(b.id)} style={{ position: 'absolute', top: '20px', right: '15px', background: 'none', border: 'none', color: theme.text, opacity: 0.5, cursor: 'pointer' }}>✖</button>
+                <h4 style={{ margin: '0 0 10px 0', color: theme.accent, fontSize: '1.1rem', fontWeight: '800' }}>{b.book_name} {b.chapter}:{b.verse}</h4>
+                <p style={{ margin: 0, color: theme.text, fontSize: '1.05rem', lineHeight: '1.6' }}>"{b.verse_text}"</p>
               </div>
             ))}
           </div>
         ) : (
-          <p style={{ color: theme.text, fontSize: '1.2rem', fontWeight: 'bold' }}>No verses bookmarked yet.</p>
+          <p style={{ color: theme.text, opacity: 0.7, fontStyle: 'italic' }}>No verses bookmarked yet.</p>
         )}
       </div>
     </div>
