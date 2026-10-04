@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 const tracks = [
-  { title: "Stream 🦆", src: "https://actions.google.com/sounds/v1/water/babbling_brook.ogg" },
-  { title: "Wind 🐧", src: "https://actions.google.com/sounds/v1/weather/winter_wind.ogg" },
-  { title: "Rain 🌧️", src: "https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg" }
+  { title: "Stream", src: "https://actions.google.com/sounds/v1/water/babbling_brook.ogg" },
+  { title: "Wind", src: "https://actions.google.com/sounds/v1/weather/winter_wind.ogg" },
+  { title: "Rain", src: "https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg" }
 ];
 
 const MusicPlayer = ({ theme }) => {
