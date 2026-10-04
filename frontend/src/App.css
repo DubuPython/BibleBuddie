@@ -1,4 +1,3 @@
-/* Ensure the app takes exactly the screen height */
 html, body {
   margin: 0;
   padding: 0;
@@ -6,16 +5,15 @@ html, body {
   overflow: hidden;
 }
 
-/* Responsive constraints */
 .app-container {
   display: flex;
   flex-direction: column;
   height: 100vh;
   padding: 15px;
+  padding-bottom: 90px; /* Space for the music player */
   box-sizing: border-box;
 }
 
-/* Make the Bible Reader fill the remaining space */
 .reader-wrapper {
   flex: 1;
   display: flex;
@@ -23,7 +21,6 @@ html, body {
   overflow: hidden;
 }
 
-/* Scrollable area for the verses */
 .verses-scroll-area {
   flex: 1;
   overflow-y: auto;
@@ -31,7 +28,6 @@ html, body {
   margin-bottom: 15px;
 }
 
-/* Custom Scrollbar for a clean look */
 .verses-scroll-area::-webkit-scrollbar {
   width: 8px;
 }
@@ -40,7 +36,6 @@ html, body {
   border-radius: 10px;
 }
 
-/* Mobile & Tablet View Adjustments */
 @media (max-width: 768px) {
   .nav-bar {
     flex-wrap: wrap;

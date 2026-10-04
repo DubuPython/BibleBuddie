@@ -43,7 +43,6 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
   const [searchQuery, setSearchQuery] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
   
-  // Load initial state from LocalStorage to prevent refresh resets
   const [currentBook, setCurrentBook] = useState(() => localStorage.getItem('last_book') || book);
   const [currentChapter, setCurrentChapter] = useState(() => parseInt(localStorage.getItem('last_chapter')) || chapter);
   
@@ -51,12 +50,17 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
   const [hasCompletedChapter, setHasCompletedChapter] = useState(false);
   const [customModal, setCustomModal] = useState({ show: false, title: '', message: '' });
 
+  // Coloring Canvas State
+  const [showCanvas, setShowCanvas] = useState(false);
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [color, setColor] = useState('#FF5252');
+
   const scrollRef = useRef(null);
   const currentBookObj = bibleBooks.find(b => b.value === currentBook);
   const displayBookName = currentBookObj?.name || currentBook;
 
   useEffect(() => {
-    // Save to LocalStorage whenever the book or chapter changes
     localStorage.setItem('last_book', currentBook);
     localStorage.setItem('last_chapter', currentChapter.toString());
 
@@ -73,6 +77,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
       }
       
       setHasCompletedChapter(false);
+      setShowCanvas(false);
       setSearchQuery('');
       if (scrollRef.current) scrollRef.current.scrollTop = 0;
     };
@@ -87,23 +92,32 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
     if (bottom && !hasCompletedChapter && session) {
       setHasCompletedChapter(true);
       await supabase.from('reading_progress').insert([{ user_id: session.user.id, book_name: displayBookName, chapter: parseInt(currentChapter) }]);
-      setCustomModal({ show: true, title: '🎉 Congratulations!', message: `You have successfully finished ${displayBookName} Chapter ${currentChapter}!` });
+      
+      const today = new Date().toLocaleDateString('en-CA');
+      const { data: stats } = await supabase.from('user_stats').select('*').eq('user_id', session.user.id).single();
+      let currentStreak = 1;
+      
+      if (!stats) {
+        await supabase.from('user_stats').insert([{ user_id: session.user.id, streak_count: 1, last_read: today }]);
+      } else if (stats.last_read !== today) {
+        const diffDays = Math.ceil(Math.abs(new Date(today) - new Date(stats.last_read)) / (1000 * 60 * 60 * 24));
+        currentStreak = (diffDays === 1) ? stats.streak_count + 1 : 1;
+        await supabase.from('user_stats').update({ streak_count: currentStreak, last_read: today }).eq('user_id', session.user.id);
+      } else {
+        currentStreak = stats.streak_count;
+      }
+
+      setCustomModal({ show: true, title: '🎉 Chapter Finished!', message: `Great job! You are on a ${currentStreak} day reading streak! 🔥` });
     }
   };
 
   const handleBookmark = async (verse) => {
     if (!session) return openAuthModal();
-    
     if (bookmarkedVerses.includes(verse.verse)) {
       setCustomModal({ show: true, title: 'Already Saved!', message: 'This verse is already in your bookmark collection.' });
       return;
     }
-
-    const { error } = await supabase.from('bookmarks').insert([{
-      user_id: session.user.id, book_name: displayBookName, chapter: parseInt(currentChapter),
-      verse: parseInt(verse.verse), verse_text: verse.text
-    }]);
-
+    const { error } = await supabase.from('bookmarks').insert([{ user_id: session.user.id, book_name: displayBookName, chapter: parseInt(currentChapter), verse: parseInt(verse.verse), verse_text: verse.text }]);
     if (!error) {
       setBookmarkedVerses([...bookmarkedVerses, verse.verse]);
       setCustomModal({ show: true, title: '⭐ Saved!', message: 'Verse successfully added to your collection.' });
@@ -139,11 +153,37 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
     setIsSpeaking(false);
   };
 
-  const inputStyle = {
-    padding: '12px', borderRadius: '15px', border: `3px solid ${theme.accent}`,
-    backgroundColor: theme.inputBg, color: theme.pageText, 
-    fontSize: '1rem', fontWeight: 'bold', outline: 'none'
+  // Canvas Logic
+  const startDrawing = (e) => {
+    setIsDrawing(true);
+    draw(e);
   };
+  const stopDrawing = () => {
+    setIsDrawing(false);
+    canvasRef.current.getContext('2d').beginPath();
+  };
+  const draw = (e) => {
+    if (!isDrawing) return;
+    const ctx = canvasRef.current.getContext('2d');
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    ctx.lineWidth = 8;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = color;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+  const clearCanvas = () => {
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+  };
+
+  const inputStyle = { padding: '12px', borderRadius: '15px', border: `3px solid ${theme.accent}`, backgroundColor: theme.inputBg, color: theme.pageText, fontSize: '1rem', fontWeight: 'bold', outline: 'none' };
 
   return (
     <div className="reader-wrapper" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '20px' }}>
@@ -175,7 +215,24 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
         
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '25px' }}>
           <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: `4px solid ${theme.accent}`, backgroundColor: theme.surface, overflow: 'hidden' }}>
-            <img src={isSpeaking ? "/talking-face.gif" : "/idle-face.png"} alt="Narrator" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span style="font-size: 2.5rem;">👦</span>'; }}/>
+            {isSpeaking ? (
+              <video 
+                src="/talking-face.mp4" 
+                autoPlay 
+                loop 
+                muted 
+                playsInline 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span style="font-size: 2.5rem;">👦</span>'; }}
+              />
+            ) : (
+              <img 
+                src="/idle-face.png" 
+                alt="Narrator" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span style="font-size: 2.5rem;">👦</span>'; }}
+              />
+            )}
           </div>
         </div>
 
@@ -202,7 +259,32 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
         
         {verses.length > 0 && (
           <div style={{ textAlign: 'center', marginTop: '40px', paddingBottom: '20px' }}>
-            <button onClick={nextChapter} style={{ backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', border: 'none', borderRadius: '25px', padding: '15px 30px', fontWeight: '900', fontSize: '1.2rem', cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,0.2)' }}>
+            <button onClick={() => setShowCanvas(!showCanvas)} style={{ backgroundColor: theme.inputBg, color: theme.pageText, border: `3px dashed ${theme.accent}`, borderRadius: '25px', padding: '15px 30px', fontWeight: '900', fontSize: '1.2rem', cursor: 'pointer', marginBottom: '20px', width: '100%' }}>
+              🎨 {showCanvas ? 'Close Canvas' : 'Color a Picture!'}
+            </button>
+
+            {showCanvas && (
+              <div style={{ backgroundColor: '#ffffff', borderRadius: '20px', border: `4px solid ${theme.accent}`, padding: '20px', marginBottom: '30px' }}>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '15px' }}>
+                  {['#FF5252', '#FF9800', '#FFEB3B', '#4CAF50', '#2196F3', '#9C27B0', '#000000'].map(c => (
+                    <button key={c} onClick={() => setColor(c)} style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: c, border: color === c ? '3px solid #000' : 'none', cursor: 'pointer' }} />
+                  ))}
+                  <button onClick={clearCanvas} style={{ marginLeft: '10px', padding: '5px 15px', borderRadius: '10px', border: 'none', backgroundColor: '#e0e0e0', fontWeight: 'bold', cursor: 'pointer' }}>Clear</button>
+                </div>
+                <canvas 
+                  ref={canvasRef}
+                  width={500} 
+                  height={300} 
+                  style={{ border: '2px dashed #ccc', borderRadius: '10px', backgroundColor: '#fff', cursor: 'crosshair', maxWidth: '100%' }}
+                  onMouseDown={startDrawing}
+                  onMouseUp={stopDrawing}
+                  onMouseOut={stopDrawing}
+                  onMouseMove={draw}
+                />
+              </div>
+            )}
+
+            <button onClick={nextChapter} style={{ backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', border: 'none', borderRadius: '25px', padding: '15px 30px', fontWeight: '900', fontSize: '1.2rem', cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,0.2)', width: '100%' }}>
               Continue to Next Chapter ➡
             </button>
           </div>

@@ -6,6 +6,7 @@ import Home from './Home';
 import BibleReader from './BibleReader';
 import Profile from './Profile';
 import AuthModal from './AuthModal';
+import MusicPlayer from './MusicPlayer';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -17,23 +18,23 @@ function App() {
     bgGradient: 'linear-gradient(135deg, #00121d 0%, #00263d 100%)',
     surface: '#005080',
     accent: '#4dbcff', 
-    text: '#ffffff',     // Text on dark surface
+    text: '#ffffff',
     inputBg: '#00263d',
-    pageText: '#ffffff'  // Text on input background
+    pageText: '#ffffff'
   } : {
     bgGradient: 'linear-gradient(135deg, #e6f2ff 0%, #ffffff 100%)',
     surface: '#365263',
     accent: '#0090e6', 
-    text: '#ffffff',     // Text on dark surface
+    text: '#ffffff',
     inputBg: '#ffffff',
-    pageText: '#365263'  // Text on white background
+    pageText: '#365263'
   };
 
   useEffect(() => {
     document.body.style.background = theme.bgGradient;
     document.body.style.backgroundAttachment = 'fixed'; 
     document.body.style.margin = '0';
-    document.body.style.overflow = 'hidden'; // Locks body scrolling
+    document.body.style.overflow = 'hidden';
     document.body.style.transition = 'background 0.4s ease';
   }, [theme.bgGradient]);
 
@@ -42,21 +43,19 @@ function App() {
       setSession(session);
       if (!session && !isGuest) setIsAuthModalOpen(true);
     });
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) setIsAuthModalOpen(false);
     });
-
     return () => subscription.unsubscribe();
   }, [isGuest]);
 
   return (
-    <div className="App" style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '20px', boxSizing: 'border-box', maxWidth: '1000px', margin: '0 auto', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div className="app-container" style={{ maxWidth: '1000px', margin: '0 auto', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       
       {isAuthModalOpen && <AuthModal onClose={() => { setIsGuest(true); setIsAuthModalOpen(false); }} theme={theme} isDarkMode={isDarkMode} />}
 
-      <nav style={{ display: 'flex', gap: '20px', padding: '20px 30px', backgroundColor: theme.surface, borderRadius: '25px', marginBottom: '20px', alignItems: 'center', boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: `4px solid ${theme.accent}`, flexShrink: 0 }}>
+      <nav className="nav-bar" style={{ display: 'flex', gap: '20px', padding: '20px 30px', backgroundColor: theme.surface, borderRadius: '25px', marginBottom: '20px', alignItems: 'center', boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: `4px solid ${theme.accent}`, flexShrink: 0 }}>
         <Link to="/" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>Home</Link>
         <Link to="/bible" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>Virtual Bible</Link>
         <Link to="/profile" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>My Profile</Link>
@@ -69,7 +68,6 @@ function App() {
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
             )}
           </button>
-
           {!session && isGuest && (
             <button onClick={() => setIsAuthModalOpen(true)} style={{ backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', border: 'none', padding: '10px 20px', borderRadius: '15px', fontWeight: '900', cursor: 'pointer', fontSize: '1.1rem', boxShadow: '0 4px 0 rgba(0,0,0,0.2)' }}>
               Log In
@@ -83,6 +81,8 @@ function App() {
         <Route path="/bible" element={<BibleReader session={session} openAuthModal={() => setIsAuthModalOpen(true)} theme={theme} isDarkMode={isDarkMode} />} />
         <Route path="/profile" element={<Profile session={session} openAuthModal={() => setIsAuthModalOpen(true)} theme={theme} isDarkMode={isDarkMode} />} />
       </Routes>
+
+      <MusicPlayer theme={theme} isDarkMode={isDarkMode} />
     </div>
   );
 }
