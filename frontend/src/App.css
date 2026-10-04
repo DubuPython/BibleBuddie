@@ -3,7 +3,7 @@ html, body {
   padding: 0;
   height: 100vh;
   overflow: hidden;
-  touch-action: manipulation; /* Prevents double-tap zooming on mobile */
+  touch-action: manipulation;
 }
 
 .app-container {
@@ -11,7 +11,6 @@ html, body {
   flex-direction: column;
   height: 100vh;
   padding: 15px;
-  padding-bottom: 90px;
   box-sizing: border-box;
 }
 
@@ -26,7 +25,7 @@ html, body {
   flex: 1;
   overflow-y: auto;
   padding-right: 15px;
-  margin-bottom: 10px;
+  padding-bottom: 100px !important; /* Forces content to scroll above the music player */
 }
 
 .verses-scroll-area::-webkit-scrollbar {
@@ -41,22 +40,13 @@ html, body {
 @media (max-width: 768px) {
   .app-container {
     padding: 10px;
-    padding-bottom: 120px; /* Extra space for stacked music player on mobile */
   }
   
-  /* Navbar adjustments */
   .nav-bar {
     flex-direction: column;
     padding: 15px !important;
     gap: 15px !important;
     border-radius: 20px !important;
-  }
-  .nav-bar-links {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 15px;
-    width: 100%;
   }
   .nav-bar-controls {
     margin-left: 0 !important;
@@ -64,7 +54,6 @@ html, body {
     justify-content: center !important;
   }
   
-  /* Card and Layout Shrinking */
   .card {
     padding: 20px !important;
     border-radius: 20px !important;
@@ -73,7 +62,6 @@ html, body {
   h1 { font-size: 1.8rem !important; text-align: center; }
   h2 { font-size: 1.5rem !important; text-align: center; }
   
-  /* Inputs and Controls */
   .reader-controls {
     flex-direction: column;
     align-items: stretch !important;
@@ -92,7 +80,6 @@ html, body {
     width: 100%;
   }
 
-  /* Music Player */
   .music-player {
     flex-direction: column !important;
     padding: 15px !important;
@@ -101,7 +88,6 @@ html, body {
     text-align: center;
   }
   
-  /* Profile Prayer Board */
   .prayer-input-group {
     flex-direction: column;
     gap: 10px !important;
@@ -111,7 +97,6 @@ html, body {
     padding: 15px !important;
   }
   
-  /* Canvas Tools */
   .color-picker {
     flex-wrap: wrap;
   }

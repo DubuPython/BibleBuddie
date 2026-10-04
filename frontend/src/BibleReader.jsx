@@ -156,7 +156,6 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
     setIsSpeaking(false);
   };
 
-  // --- MOBILE-FRIENDLY CANVAS LOGIC ---
   const getCoordinates = (e) => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
@@ -170,7 +169,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
   };
 
   const startDrawing = (e) => {
-    e.preventDefault(); // Stop mobile scrolling while coloring
+    e.preventDefault(); 
     setIsDrawing(true);
     const { x, y } = getCoordinates(e);
     const ctx = canvasRef.current.getContext('2d');
@@ -254,7 +253,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
           </div>
         </div>
 
-        <h2 style={{ color: theme.pageText, margin: '0 0 25px 0' }}>{displayBookName} {currentChapter}</h2>
+        <h2 style={{ color: theme.pageText, margin: '0 0 25px 0', textAlign: 'center' }}>{displayBookName} {currentChapter}</h2>
 
         {displayedVerses.length > 0 ? displayedVerses.map(verse => {
           const isBookmarked = bookmarkedVerses.includes(verse.verse);
@@ -263,7 +262,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
               <button onClick={() => handleBookmark(verse)} style={{ background: 'none', border: 'none', color: theme.accent, cursor: 'pointer', marginRight: '15px', padding: 0 }} title="Bookmark this verse">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill={isBookmarked ? theme.accent : "none"} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
               </button>
-              <p style={{ margin: 0, lineHeight: '1.8', color: theme.pageText }} className="verse-font">
+              <p style={{ margin: 0, lineHeight: '1.8', color: theme.pageText, fontSize: '1.2rem' }}>
                 <span style={{ backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', borderRadius: '50%', width: '35px', height: '35px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', marginRight: '12px' }}>
                   {verse.verse}
                 </span> 
@@ -276,7 +275,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
         )}
         
         {verses.length > 0 && (
-          <div style={{ textAlign: 'center', marginTop: '40px', paddingBottom: '20px' }}>
+          <div style={{ textAlign: 'center', marginTop: '40px' }}>
             <button onClick={() => setShowCanvas(!showCanvas)} style={{ backgroundColor: theme.inputBg, color: theme.pageText, border: `3px dashed ${theme.accent}`, borderRadius: '25px', padding: '15px 30px', fontWeight: '900', fontSize: '1.2rem', cursor: 'pointer', marginBottom: '20px', width: '100%' }}>
               🎨 {showCanvas ? 'Close Canvas' : 'Color a Picture!'}
             </button>
@@ -289,7 +288,6 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
                   ))}
                   <button onClick={clearCanvas} style={{ marginLeft: '10px', padding: '5px 15px', borderRadius: '10px', border: 'none', backgroundColor: '#e0e0e0', fontWeight: 'bold', cursor: 'pointer' }}>Clear</button>
                 </div>
-                {/* Canvas now correctly mapped with mobile touch events */}
                 <canvas 
                   ref={canvasRef}
                   width={500} 

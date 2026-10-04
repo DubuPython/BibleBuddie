@@ -57,7 +57,8 @@ function App() {
 
       <nav className="nav-bar card" style={{ display: 'flex', padding: '20px 30px', backgroundColor: theme.surface, borderRadius: '25px', marginBottom: '20px', alignItems: 'center', boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: `4px solid ${theme.accent}`, flexShrink: 0 }}>
         
-        <div className="nav-bar-links">
+        {/* Added Flexbox and Gap to fix the squished desktop links */}
+        <div className="nav-bar-links" style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
           <Link to="/" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>Home</Link>
           <Link to="/bible" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>Virtual Bible</Link>
           <Link to="/profile" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>My Profile</Link>
