@@ -42,6 +42,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
   const [verses, setVerses] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [mediaError, setMediaError] = useState(false); // New state to safely handle missing files
   
   const [currentBook, setCurrentBook] = useState(() => localStorage.getItem('last_book') || book);
   const [currentChapter, setCurrentChapter] = useState(() => parseInt(localStorage.getItem('last_chapter')) || chapter);
@@ -50,7 +51,6 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
   const [hasCompletedChapter, setHasCompletedChapter] = useState(false);
   const [customModal, setCustomModal] = useState({ show: false, title: '', message: '' });
 
-  // Coloring Canvas State
   const [showCanvas, setShowCanvas] = useState(false);
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -153,7 +153,6 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
     setIsSpeaking(false);
   };
 
-  // Canvas Logic
   const startDrawing = (e) => {
     setIsDrawing(true);
     draw(e);
@@ -214,8 +213,10 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
       <div ref={scrollRef} onScroll={handleScroll} className="verses-scroll-area" style={{ flex: 1, overflowY: 'auto', backgroundColor: theme.inputBg, border: `4px solid ${theme.accent}`, borderRadius: '20px', padding: '25px', minHeight: 0 }}>
         
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '25px' }}>
-          <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: `4px solid ${theme.accent}`, backgroundColor: theme.surface, overflow: 'hidden' }}>
-            {isSpeaking ? (
+          <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: `4px solid ${theme.accent}`, backgroundColor: theme.surface, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {mediaError ? (
+              <span style={{ fontSize: '3rem' }}>👦</span>
+            ) : isSpeaking ? (
               <video 
                 src="/talking-face.mp4" 
                 autoPlay 
@@ -223,14 +224,14 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
                 muted 
                 playsInline 
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span style="font-size: 2.5rem;">👦</span>'; }}
+                onError={() => setMediaError(true)}
               />
             ) : (
               <img 
                 src="/idle-face.png" 
                 alt="Narrator" 
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span style="font-size: 2.5rem;">👦</span>'; }}
+                onError={() => setMediaError(true)}
               />
             )}
           </div>
