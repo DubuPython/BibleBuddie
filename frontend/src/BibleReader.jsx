@@ -82,7 +82,14 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
       setShowCanvas(false);
       setSearchQuery('');
       setMediaError(false);
-      if (scrollRef.current) scrollRef.current.scrollTop = 0;
+      
+      // Auto-trigger completion for extremely short chapters that don't need a scrollbar
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = 0;
+        if (scrollRef.current.scrollHeight <= scrollRef.current.clientHeight) {
+          triggerCompletion();
+        }
+      }
     };
     
     fetchChapterData();
@@ -90,10 +97,12 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
 
   const displayedVerses = verses.filter(v => v.text.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const handleScroll = async (e) => {
-    const bottom = e.target.scrollHeight - e.target.scrollTop <= e.target.clientHeight + 50;
-    if (bottom && !hasCompletedChapter && session) {
-      setHasCompletedChapter(true);
+  // Abstracted completion logic to be reused reliably
+  const triggerCompletion = async () => {
+    if (hasCompletedChapter) return;
+    setHasCompletedChapter(true);
+
+    if (session) {
       await supabase.from('reading_progress').insert([{ user_id: session.user.id, book_name: displayBookName, chapter: parseInt(currentChapter) }]);
       
       const today = new Date().toLocaleDateString('en-CA');
@@ -111,6 +120,17 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
       }
 
       setCustomModal({ show: true, title: '🎉 Chapter Finished!', message: `Great job! You are on a ${currentStreak} day reading streak! 🔥` });
+    } else {
+      // Show Guest Completion Popup
+      setCustomModal({ show: true, title: '🎉 Chapter Finished!', message: `Great job! Log in to save your progress and build a daily reading streak! 🔥` });
+    }
+  };
+
+  const handleScroll = (e) => {
+    // Increased tolerance to 300px so it guarantees firing before the user hits the very bottom
+    const bottom = e.target.scrollHeight - e.target.scrollTop <= e.target.clientHeight + 300;
+    if (bottom) {
+      triggerCompletion();
     }
   };
 
@@ -275,7 +295,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
         )}
         
         {verses.length > 0 && (
-          <div style={{ textAlign: 'center', marginTop: '40px' }}>
+          <div style={{ textAlign: 'center', marginTop: '40px', paddingBottom: '20px' }}>
             <button onClick={() => setShowCanvas(!showCanvas)} style={{ backgroundColor: theme.inputBg, color: theme.pageText, border: `3px dashed ${theme.accent}`, borderRadius: '25px', padding: '15px 30px', fontWeight: '900', fontSize: '1.2rem', cursor: 'pointer', marginBottom: '20px', width: '100%' }}>
               🎨 {showCanvas ? 'Close Canvas' : 'Color a Picture!'}
             </button>
