@@ -122,9 +122,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
 
   const handleScroll = (e) => {
     const bottom = e.target.scrollHeight - e.target.scrollTop <= e.target.clientHeight + 300;
-    if (bottom) {
-      triggerCompletion();
-    }
+    if (bottom) triggerCompletion();
   };
 
   const handleBookmark = async (verse) => {
@@ -142,8 +140,6 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
 
   const nextChapter = async () => {
     handleStop();
-    
-    // Silently log completion if they click next before hitting the bottom
     if (!hasCompletedChapter) {
         setHasCompletedChapter(true);
         if (session) {
@@ -249,6 +245,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
         </div>
       )}
 
+      {/* Grid Class added for mobile */}
       <div className="reader-controls" style={{ display: 'flex', gap: '15px', backgroundColor: theme.inputBg, padding: '15px', borderRadius: '20px', marginBottom: '15px', border: `3px dashed ${theme.accent}`, flexShrink: 0 }}>
         <select value={currentBook} onChange={(e) => { setCurrentBook(e.target.value); setCurrentChapter(1); }} style={inputStyle}>
           {bibleBooks.map(b => ( <option key={b.value} value={b.value}>{b.name}</option> ))}
@@ -269,17 +266,9 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
             {mediaError ? (
               <span style={{ fontSize: '3rem' }}>👦</span>
             ) : isSpeaking ? (
-              <video 
-                src={talkingFace} autoPlay loop muted playsInline 
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
-                onError={() => setMediaError(true)}
-              />
+              <video src={talkingFace} autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} onError={() => setMediaError(true)}/>
             ) : (
-              <img 
-                src={idleFace} alt="Narrator" 
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
-                onError={() => setMediaError(true)}
-              />
+              <img src={idleFace} alt="Narrator" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} onError={() => setMediaError(true)}/>
             )}
           </div>
         </div>
@@ -293,7 +282,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
               <button onClick={() => handleBookmark(verse)} style={{ background: 'none', border: 'none', color: theme.accent, cursor: 'pointer', marginRight: '15px', padding: 0 }} title="Bookmark this verse">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill={isBookmarked ? theme.accent : "none"} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
               </button>
-              <p style={{ margin: 0, lineHeight: '1.8', color: theme.pageText, fontSize: '1.2rem' }}>
+              <p className="verse-font" style={{ margin: 0, lineHeight: '1.8', color: theme.pageText, fontSize: '1.2rem' }}>
                 <span style={{ backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', borderRadius: '50%', width: '35px', height: '35px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', marginRight: '12px' }}>
                   {verse.verse}
                 </span> 
@@ -320,9 +309,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
                   <button onClick={clearCanvas} style={{ marginLeft: '10px', padding: '5px 15px', borderRadius: '10px', border: 'none', backgroundColor: '#e0e0e0', fontWeight: 'bold', cursor: 'pointer' }}>Clear</button>
                 </div>
                 <canvas 
-                  ref={canvasRef}
-                  width={500} 
-                  height={300} 
+                  ref={canvasRef} width={500} height={300} 
                   style={{ border: '2px dashed #ccc', borderRadius: '10px', backgroundColor: '#fff', touchAction: 'none', width: '100%', maxWidth: '500px' }}
                   onMouseDown={startDrawing} onMouseUp={stopDrawing} onMouseOut={stopDrawing} onMouseMove={draw}
                   onTouchStart={startDrawing} onTouchEnd={stopDrawing} onTouchCancel={stopDrawing} onTouchMove={draw}
