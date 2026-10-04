@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { supabase } from './supabaseClient';
 
-// 1. Import your media files directly at the top!
 import idleFace from './idle-face.png';
 import talkingFace from './talking-face.mp4';
 
@@ -83,7 +82,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
       setHasCompletedChapter(false);
       setShowCanvas(false);
       setSearchQuery('');
-      setMediaError(false); // Reset error state on chapter change
+      setMediaError(false); 
       if (scrollRef.current) scrollRef.current.scrollTop = 0;
     };
     
@@ -220,7 +219,6 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '25px' }}>
           <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: `4px solid ${theme.accent}`, backgroundColor: theme.surface, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             
-            {/* 2. Use the imported variables here for the src tags */}
             {mediaError ? (
               <span style={{ fontSize: '3rem' }}>👦</span>
             ) : isSpeaking ? (
@@ -230,14 +228,14 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
                 loop 
                 muted 
                 playsInline 
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
                 onError={() => setMediaError(true)}
               />
             ) : (
               <img 
                 src={idleFace}
                 alt="Narrator" 
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
                 onError={() => setMediaError(true)}
               />
             )}
