@@ -6,7 +6,6 @@ const Profile = ({ session, openAuthModal, theme, isDarkMode }) => {
   const [readCount, setReadCount] = useState(0);
   const [streak, setStreak] = useState(0);
   
-  // Prayer Board State
   const [prayers, setPrayers] = useState(() => {
     const saved = localStorage.getItem('prayer_board');
     return saved ? JSON.parse(saved) : [{ id: 1, text: "In loving memory of Sarino 🐾", date: new Date().toLocaleDateString() }];
@@ -53,9 +52,9 @@ const Profile = ({ session, openAuthModal, theme, isDarkMode }) => {
 
   if (!session) {
     return (
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        <div style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '35px', padding: '50px', textAlign: 'center' }}>
-          <h2 style={{ color: theme.text, marginBottom: '20px', fontSize: '2.5rem', fontWeight: '900' }}>Guest Mode</h2>
+      <div className="verses-scroll-area">
+        <div className="card" style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '35px', padding: '50px', textAlign: 'center' }}>
+          <h2 style={{ color: theme.text, marginBottom: '20px' }}>Guest Mode</h2>
           <p style={{ fontSize: '1.3rem', color: theme.text, marginBottom: '30px', fontWeight: '600' }}>Create an account to track your reading progress and save your favorite verses.</p>
           <button onClick={openAuthModal} style={{ backgroundColor: theme.accent, padding: '15px 35px', fontSize: '1.3rem', border: 'none', borderRadius: '25px', cursor: 'pointer', fontWeight: '900', color: isDarkMode ? '#00263d' : '#ffffff', boxShadow: '0 6px 0 rgba(0,0,0,0.15)' }}>
             Log In / Sign Up
@@ -69,25 +68,24 @@ const Profile = ({ session, openAuthModal, theme, isDarkMode }) => {
   const displayName = session.user.user_metadata?.username || "Reader";
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', paddingRight: '10px' }}>
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', marginBottom: '30px', flexWrap: 'wrap' }}>
-        <h1 style={{ color: theme.pageText, margin: 0, fontSize: '2.5rem', fontWeight: '900' }}>Hello, {displayName}!</h1>
+    <div className="verses-scroll-area">
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <h1 style={{ color: theme.pageText, margin: 0 }}>Hello, {displayName}!</h1>
         <div style={{ backgroundColor: theme.surface, border: `3px solid ${theme.accent}`, padding: '10px 20px', borderRadius: '20px', color: theme.text, fontWeight: '900', fontSize: '1.3rem', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>
           🔥 {streak} Day Streak
         </div>
       </div>
       
-      {/* PRAYER & MEMORIAL BOARD */}
-      <div style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '35px', padding: '35px', marginBottom: '35px' }}>
-        <h2 style={{ color: theme.text, margin: '0 0 25px 0', fontSize: '2rem', fontWeight: '900' }}>🕯️ Virtual Prayer & Memorial Board</h2>
+      <div className="card" style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '35px', padding: '35px', marginBottom: '25px' }}>
+        <h2 style={{ color: theme.text, margin: '0 0 25px 0' }}>🕯️ Virtual Prayer Board</h2>
         
-        <div style={{ display: 'flex', gap: '15px', marginBottom: '25px' }}>
+        <div className="prayer-input-group" style={{ display: 'flex', gap: '15px', marginBottom: '25px' }}>
           <input 
             type="text" 
-            placeholder="Write a prayer intention or memorial..." 
+            placeholder="Write a prayer intention..." 
             value={newPrayer} 
             onChange={(e) => setNewPrayer(e.target.value)} 
-            style={{ flex: 1, padding: '15px', borderRadius: '20px', border: `3px solid ${theme.accent}`, backgroundColor: theme.inputBg, color: theme.pageText, fontSize: '1.1rem', fontWeight: 'bold', outline: 'none' }}
+            style={{ flex: 1, padding: '15px', borderRadius: '20px', border: `3px solid ${theme.accent}`, backgroundColor: theme.inputBg, color: theme.pageText, fontSize: '1.1rem', fontWeight: 'bold', outline: 'none', boxSizing: 'border-box' }}
           />
           <button onClick={addPrayer} style={{ backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', border: 'none', padding: '0 25px', borderRadius: '20px', fontWeight: '900', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 0 rgba(0,0,0,0.15)' }}>
             Light Candle
@@ -96,9 +94,9 @@ const Profile = ({ session, openAuthModal, theme, isDarkMode }) => {
 
         <div style={{ display: 'grid', gap: '15px' }}>
           {prayers.map(prayer => (
-            <div key={prayer.id} style={{ backgroundColor: theme.inputBg, padding: '20px', borderRadius: '20px', border: `2px dashed ${theme.accent}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div key={prayer.id} style={{ backgroundColor: theme.inputBg, padding: '20px', borderRadius: '20px', border: `2px dashed ${theme.accent}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
               <div>
-                <p style={{ margin: '0 0 5px 0', color: theme.pageText, fontSize: '1.2rem', fontWeight: 'bold' }}>🕯️ {prayer.text}</p>
+                <p style={{ margin: '0 0 5px 0', color: theme.pageText, fontSize: '1.1rem', fontWeight: 'bold' }}>🕯️ {prayer.text}</p>
                 <small style={{ color: theme.accent, fontWeight: 'bold' }}>{prayer.date}</small>
               </div>
               <button onClick={() => deletePrayer(prayer.id)} style={{ background: 'none', border: 'none', color: isDarkMode ? '#ffffff' : '#365263', cursor: 'pointer', fontSize: '1.5rem' }}>✖</button>
@@ -107,12 +105,12 @@ const Profile = ({ session, openAuthModal, theme, isDarkMode }) => {
         </div>
       </div>
 
-      <div style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '35px', padding: '35px', marginBottom: '35px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-          <h2 style={{ color: theme.text, margin: 0, fontSize: '2rem', fontWeight: '900' }}>Reading Journey</h2>
+      <div className="card" style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '35px', padding: '35px', marginBottom: '25px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
+          <h2 style={{ color: theme.text, margin: 0 }}>Reading Journey</h2>
           <button onClick={() => supabase.auth.signOut()} style={{ backgroundColor: theme.inputBg, color: theme.pageText, border: `3px solid ${theme.accent}`, padding: '10px 20px', borderRadius: '20px', cursor: 'pointer', fontWeight: '900', fontSize: '1.1rem' }}>Log Out</button>
         </div>
-        <p style={{ fontSize: '1.3rem', color: theme.text, marginBottom: '20px', fontWeight: 'bold' }}>Chapters Completed: {readCount} / {totalChapters}</p>
+        <p style={{ fontSize: '1.2rem', color: theme.text, marginBottom: '20px', fontWeight: 'bold' }}>Chapters Completed: {readCount} / {totalChapters}</p>
         <div style={{ width: '100%', backgroundColor: theme.inputBg, borderRadius: '20px', height: '35px', overflow: 'hidden', border: `3px solid ${theme.accent}` }}>
           <div style={{ width: `${progressPercentage}%`, backgroundColor: theme.accent, height: '100%', transition: 'width 0.5s', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isDarkMode ? '#00263d' : '#ffffff', fontWeight: '900', fontSize: '1.1rem' }}>
             {progressPercentage > 4 ? `${progressPercentage}%` : ''}
@@ -120,8 +118,8 @@ const Profile = ({ session, openAuthModal, theme, isDarkMode }) => {
         </div>
       </div>
 
-      <div style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '35px', padding: '35px' }}>
-        <h2 style={{ color: theme.text, margin: '0 0 25px 0', fontSize: '2rem', fontWeight: '900' }}>Bookmark Collection</h2>
+      <div className="card" style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '35px', padding: '35px', marginBottom: '25px' }}>
+        <h2 style={{ color: theme.text, margin: '0 0 25px 0' }}>Bookmark Collection</h2>
         {bookmarks.length > 0 ? (
           <div style={{ display: 'grid', gap: '20px' }}>
             {bookmarks.map(b => (
@@ -129,7 +127,7 @@ const Profile = ({ session, openAuthModal, theme, isDarkMode }) => {
                 <button onClick={() => deleteBookmark(b.id)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: theme.pageText, cursor: 'pointer' }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
-                <h4 style={{ margin: '0 0 10px 0', color: theme.accent, fontSize: '1.3rem', fontWeight: '900' }}>{b.book_name} {b.chapter}:{b.verse}</h4>
+                <h4 style={{ margin: '0 0 10px 0', color: theme.accent, fontSize: '1.2rem', fontWeight: '900', paddingRight: '30px' }}>{b.book_name} {b.chapter}:{b.verse}</h4>
                 <p style={{ margin: 0, color: theme.pageText, fontSize: '1.1rem', lineHeight: '1.6', fontWeight: '600' }}>"{b.verse_text}"</p>
               </div>
             ))}

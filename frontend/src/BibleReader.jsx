@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { supabase } from './supabaseClient';
-
 import idleFace from './idle-face.png';
 import talkingFace from './talking-face.mp4';
 
@@ -82,7 +81,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
       setHasCompletedChapter(false);
       setShowCanvas(false);
       setSearchQuery('');
-      setMediaError(false); 
+      setMediaError(false);
       if (scrollRef.current) scrollRef.current.scrollTop = 0;
     };
     
@@ -157,21 +156,33 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
     setIsSpeaking(false);
   };
 
+  // --- MOBILE-FRIENDLY CANVAS LOGIC ---
+  const getCoordinates = (e) => {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    if (e.touches && e.touches.length > 0) {
+      return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
+    }
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+  };
+
   const startDrawing = (e) => {
+    e.preventDefault(); // Stop mobile scrolling while coloring
     setIsDrawing(true);
-    draw(e);
+    const { x, y } = getCoordinates(e);
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.beginPath();
+    ctx.moveTo(x, y);
   };
-  const stopDrawing = () => {
-    setIsDrawing(false);
-    canvasRef.current.getContext('2d').beginPath();
-  };
+
   const draw = (e) => {
     if (!isDrawing) return;
+    e.preventDefault();
+    const { x, y } = getCoordinates(e);
     const ctx = canvasRef.current.getContext('2d');
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
     ctx.lineWidth = 8;
     ctx.lineCap = 'round';
     ctx.strokeStyle = color;
@@ -180,6 +191,13 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
     ctx.beginPath();
     ctx.moveTo(x, y);
   };
+
+  const stopDrawing = (e) => {
+    e.preventDefault();
+    setIsDrawing(false);
+    canvasRef.current.getContext('2d').beginPath();
+  };
+
   const clearCanvas = () => {
     const ctx = canvasRef.current.getContext('2d');
     ctx.fillStyle = '#ffffff';
@@ -189,11 +207,11 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
   const inputStyle = { padding: '12px', borderRadius: '15px', border: `3px solid ${theme.accent}`, backgroundColor: theme.inputBg, color: theme.pageText, fontSize: '1rem', fontWeight: 'bold', outline: 'none' };
 
   return (
-    <div className="reader-wrapper" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '20px' }}>
+    <div className="reader-wrapper card" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '20px' }}>
       
       {customModal.show && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
-          <div style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '30px', textAlign: 'center', maxWidth: '350px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '20px', boxSizing: 'border-box' }}>
+          <div className="card" style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '30px', textAlign: 'center', width: '100%', maxWidth: '350px' }}>
             <h2 style={{ color: theme.text, marginTop: 0 }}>{customModal.title}</h2>
             <p style={{ color: theme.text, fontSize: '1.2rem', marginBottom: '25px' }}>{customModal.message}</p>
             <button onClick={() => setCustomModal({ show: false, title: '', message: '' })} style={{ backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', border: 'none', padding: '12px 25px', borderRadius: '15px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', width: '100%' }}>Awesome!</button>
@@ -209,7 +227,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
         <input type="text" placeholder="🔍 Search this chapter..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
       </div>
 
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', flexShrink: 0 }}>
+      <div className="action-buttons" style={{ display: 'flex', gap: '10px', marginBottom: '15px', flexShrink: 0 }}>
         <button onClick={handleReadAloud} disabled={isSpeaking || verses.length === 0} style={{ flex: 1, backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', borderRadius: '15px', padding: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>🔊 Read Aloud</button>
         <button onClick={handleStop} disabled={!isSpeaking} style={{ flex: 1, backgroundColor: theme.inputBg, color: theme.pageText, borderRadius: '15px', border: `3px solid ${theme.accent}`, padding: '12px', fontWeight: 'bold', cursor: 'pointer' }}>⏹️ Stop</button>
       </div>
@@ -218,32 +236,25 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
         
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '25px' }}>
           <div style={{ width: '80px', height: '80px', borderRadius: '50%', border: `4px solid ${theme.accent}`, backgroundColor: theme.surface, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            
             {mediaError ? (
               <span style={{ fontSize: '3rem' }}>👦</span>
             ) : isSpeaking ? (
               <video 
-                src={talkingFace}
-                autoPlay 
-                loop 
-                muted 
-                playsInline 
+                src={talkingFace} autoPlay loop muted playsInline 
                 style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
                 onError={() => setMediaError(true)}
               />
             ) : (
               <img 
-                src={idleFace}
-                alt="Narrator" 
+                src={idleFace} alt="Narrator" 
                 style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
                 onError={() => setMediaError(true)}
               />
             )}
-
           </div>
         </div>
 
-        <h2 style={{ color: theme.pageText, margin: '0 0 25px 0', fontSize: '2rem', textAlign: 'center' }}>{displayBookName} {currentChapter}</h2>
+        <h2 style={{ color: theme.pageText, margin: '0 0 25px 0' }}>{displayBookName} {currentChapter}</h2>
 
         {displayedVerses.length > 0 ? displayedVerses.map(verse => {
           const isBookmarked = bookmarkedVerses.includes(verse.verse);
@@ -252,7 +263,7 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
               <button onClick={() => handleBookmark(verse)} style={{ background: 'none', border: 'none', color: theme.accent, cursor: 'pointer', marginRight: '15px', padding: 0 }} title="Bookmark this verse">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill={isBookmarked ? theme.accent : "none"} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
               </button>
-              <p style={{ margin: 0, fontSize: '1.2rem', lineHeight: '1.8', color: theme.pageText }}>
+              <p style={{ margin: 0, lineHeight: '1.8', color: theme.pageText }} className="verse-font">
                 <span style={{ backgroundColor: theme.accent, color: isDarkMode ? '#00263d' : '#ffffff', borderRadius: '50%', width: '35px', height: '35px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', marginRight: '12px' }}>
                   {verse.verse}
                 </span> 
@@ -272,21 +283,20 @@ const BibleReader = ({ book = 'Genesis', chapter = 1, session, openAuthModal, th
 
             {showCanvas && (
               <div style={{ backgroundColor: '#ffffff', borderRadius: '20px', border: `4px solid ${theme.accent}`, padding: '20px', marginBottom: '30px' }}>
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '15px' }}>
+                <div className="color-picker" style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '15px' }}>
                   {['#FF5252', '#FF9800', '#FFEB3B', '#4CAF50', '#2196F3', '#9C27B0', '#000000'].map(c => (
-                    <button key={c} onClick={() => setColor(c)} style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: c, border: color === c ? '3px solid #000' : 'none', cursor: 'pointer' }} />
+                    <button key={c} onClick={() => setColor(c)} style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: c, border: color === c ? '3px solid #000' : 'none', cursor: 'pointer', flexShrink: 0 }} />
                   ))}
                   <button onClick={clearCanvas} style={{ marginLeft: '10px', padding: '5px 15px', borderRadius: '10px', border: 'none', backgroundColor: '#e0e0e0', fontWeight: 'bold', cursor: 'pointer' }}>Clear</button>
                 </div>
+                {/* Canvas now correctly mapped with mobile touch events */}
                 <canvas 
                   ref={canvasRef}
                   width={500} 
                   height={300} 
-                  style={{ border: '2px dashed #ccc', borderRadius: '10px', backgroundColor: '#fff', cursor: 'crosshair', maxWidth: '100%' }}
-                  onMouseDown={startDrawing}
-                  onMouseUp={stopDrawing}
-                  onMouseOut={stopDrawing}
-                  onMouseMove={draw}
+                  style={{ border: '2px dashed #ccc', borderRadius: '10px', backgroundColor: '#fff', touchAction: 'none', width: '100%', maxWidth: '500px' }}
+                  onMouseDown={startDrawing} onMouseUp={stopDrawing} onMouseOut={stopDrawing} onMouseMove={draw}
+                  onTouchStart={startDrawing} onTouchEnd={stopDrawing} onTouchCancel={stopDrawing} onTouchMove={draw}
                 />
               </div>
             )}

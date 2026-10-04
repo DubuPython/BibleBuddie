@@ -55,13 +55,16 @@ function App() {
       
       {isAuthModalOpen && <AuthModal onClose={() => { setIsGuest(true); setIsAuthModalOpen(false); }} theme={theme} isDarkMode={isDarkMode} />}
 
-      <nav className="nav-bar" style={{ display: 'flex', gap: '20px', padding: '20px 30px', backgroundColor: theme.surface, borderRadius: '25px', marginBottom: '20px', alignItems: 'center', boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: `4px solid ${theme.accent}`, flexShrink: 0 }}>
-        <Link to="/" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>Home</Link>
-        <Link to="/bible" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>Virtual Bible</Link>
-        <Link to="/profile" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>My Profile</Link>
+      <nav className="nav-bar card" style={{ display: 'flex', padding: '20px 30px', backgroundColor: theme.surface, borderRadius: '25px', marginBottom: '20px', alignItems: 'center', boxShadow: '0 8px 16px rgba(0,0,0,0.15)', border: `4px solid ${theme.accent}`, flexShrink: 0 }}>
         
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: '15px', alignItems: 'center' }}>
-          <button onClick={() => setIsDarkMode(!isDarkMode)} style={{ background: theme.accent, border: 'none', borderRadius: '50%', width: '45px', height: '45px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 0 rgba(0,0,0,0.2)' }}>
+        <div className="nav-bar-links">
+          <Link to="/" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>Home</Link>
+          <Link to="/bible" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>Virtual Bible</Link>
+          <Link to="/profile" style={{ textDecoration: 'none', fontWeight: '900', color: '#ffffff', fontSize: '1.2rem' }}>My Profile</Link>
+        </div>
+
+        <div className="nav-bar-controls" style={{ marginLeft: 'auto', display: 'flex', gap: '15px', alignItems: 'center' }}>
+          <button onClick={() => setIsDarkMode(!isDarkMode)} style={{ background: theme.accent, border: 'none', borderRadius: '50%', width: '45px', height: '45px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 0 rgba(0,0,0,0.2)', flexShrink: 0 }}>
             {isDarkMode ? (
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00263d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line></svg>
             ) : (

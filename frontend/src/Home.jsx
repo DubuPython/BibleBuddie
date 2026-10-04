@@ -10,7 +10,6 @@ const kidFriendlyVerses = [
   { text: "Thy word is a lamp unto my feet, and a light unto my path.", ref: "Psalm 119:105" }
 ];
 
-// Curated list of major Catholic Feast Days
 const feastDays = {
   "1-1": "Today is the Solemnity of Mary, Mother of God!",
   "2-14": "Today is the Feast of St. Valentine, a 3rd-century saint known for his love and charity.",
@@ -32,7 +31,6 @@ const feastDays = {
   "12-25": "Merry Christmas! Today we celebrate the joyful birth of our Savior, Jesus Christ!"
 };
 
-// Safe, child-friendly Catholic historical facts for days without a major feast
 const historicalFacts = [
   "In 1506, Pope Julius II laid the foundation stone for the beautiful St. Peter's Basilica in Rome.",
   "In 1223, St. Francis of Assisi created the very first live Nativity scene to help people celebrate Christmas.",
@@ -55,10 +53,8 @@ const Home = ({ theme }) => {
     const today = new Date();
     const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
     
-    // Set Verse of the Day
     setVotd(kidFriendlyVerses[dayOfYear % kidFriendlyVerses.length]);
 
-    // Check for a Feast Day, otherwise load a historical fact
     const month = today.getMonth() + 1;
     const day = today.getDate();
     const dateKey = `${month}-${day}`;
@@ -71,15 +67,15 @@ const Home = ({ theme }) => {
   }, []);
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '20px', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '30px', marginBottom: '25px', boxShadow: '0 8px 16px rgba(0,0,0,0.15)', flexShrink: 0 }}>
-        <h2 style={{ color: theme.accent, fontSize: '2rem', marginTop: 0 }}>⭐ Verse of the Day</h2>
+    <div className="verses-scroll-area" style={{ display: 'flex', flexDirection: 'column' }}>
+      <div className="card" style={{ backgroundColor: theme.surface, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '30px', marginBottom: '25px', boxShadow: '0 8px 16px rgba(0,0,0,0.15)', flexShrink: 0 }}>
+        <h2 style={{ color: theme.accent, marginTop: 0 }}>⭐ Verse of the Day</h2>
         <p style={{ color: theme.text, fontSize: '1.2rem', fontStyle: 'italic', lineHeight: '1.6' }}>"{votd.text}"</p>
         <p style={{ color: theme.accent, textAlign: 'right', fontWeight: 'bold', fontSize: '1.1rem' }}>- {votd.ref}</p>
       </div>
 
-      <div style={{ backgroundColor: theme.inputBg, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '30px', boxShadow: '0 8px 16px rgba(0,0,0,0.15)', flexShrink: 0 }}>
-        <h2 style={{ color: theme.accent, fontSize: '2rem', marginTop: 0 }}>📅 Today in Catholic History</h2>
+      <div className="card" style={{ backgroundColor: theme.inputBg, border: `4px solid ${theme.accent}`, borderRadius: '25px', padding: '30px', boxShadow: '0 8px 16px rgba(0,0,0,0.15)', flexShrink: 0 }}>
+        <h2 style={{ color: theme.accent, marginTop: 0 }}>📅 Today in Catholic History</h2>
         <p style={{ color: theme.pageText, fontSize: '1.2rem', lineHeight: '1.6' }}>{historyEvent}</p>
       </div>
     </div>
